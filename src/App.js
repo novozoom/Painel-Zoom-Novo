@@ -525,6 +525,7 @@ function Resultados() {
                                 const pedidosFiltrados = dadosProcessados.filter(item => {
                                     if (filtroRank.tipo === 'marca') return (item.marca || '').trim() === filtroRank.valor.trim();
                                     if (filtroRank.tipo === 'grupo') return (item.grupo || '').trim() === filtroRank.valor.trim();
+                                    if (filtroRank.tipo === 'conta') return (item.origem_nome || '').trim() === filtroRank.valor.trim();
                                     return false;
                                 });
                                 return (
@@ -637,7 +638,7 @@ function Resultados() {
                             </div>
                             <section className="infocard">
                                 {contasAgrupadas.map((conta, i) => (
-                                    <div className="conta-row" key={i}>
+                                    <div className="conta-row" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'conta',valor:conta.nome ? conta.nome.trim() : ''}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                         <div className="conta-pos">{i + 1}</div>
                                         <div className="conta-info">
                                             <b>{conta.nome ? conta.nome.trim() : 'Outros'}</b>
@@ -662,7 +663,7 @@ function Resultados() {
                                 </div>
                                 <h4 style={{margin:'16px 0 10px',fontSize:'14px',color:'var(--soft)'}}>Por conta</h4>
                                 {fullData.contas.map((conta, i) => (
-                                    <div className="conta-row" key={i}>
+                                    <div className="conta-row" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'conta',valor:conta.nome}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                         <div className="conta-pos">{i + 1}</div>
                                         <div className="conta-info">
                                             <b>{conta.nome}</b>
