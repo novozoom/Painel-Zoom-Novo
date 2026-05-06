@@ -13,7 +13,8 @@ function Resultados() {
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
     const [abaPrincipal, setAbaPrincipal] = useState('home'); // home, pedidos
-
+    const [filtroAtivo, setFiltroAtivo] = useState('Hoje');
+    const [abaRanking, setAbaRanking] = useState('produtos');
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
