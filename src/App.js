@@ -17,6 +17,7 @@ function Resultados() {
     const [abaRanking, setAbaRanking] = useState('produtos');
     const [rankLimit, setRankLimit] = useState(10);
     const [ordenacao, setOrdenacao] = useState('pedidos');
+    const [filtroRank, setFiltroRank] = useState(null); // {tipo:'marca',valor:'PARAMOUNT'}
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -481,7 +482,7 @@ function Resultados() {
 
                                 <div className={`rank-list ${abaRanking === 'marcas' ? 'active' : ''}`}>
                                     {sortRanking(marcasAgrupadas).slice(0, 10).map((marca, i) => (
-                                        <article className="rank" key={i}>
+                                        <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'marca',valor:marca.nome}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                             <div className="rank-top">
                                                 <div className="medal">{i + 1}</div>
                                                 <div className="rname">
@@ -493,7 +494,7 @@ function Resultados() {
                                             <div className="metrics">
                                                 <div><span>Faturou</span><b>R$ {marca.faturamento.toFixed(0)}</b></div>
                                                 <div><span>Lucro</span><b className="green">R$ {marca.lucro.toFixed(0)}</b></div>
-                                                <div><span>Qtd</span><b>{marca.unidades} un.</b></div>
+                                                <div><span>Pedidos</span><b>{marca.pedidos}</b></div>
                                             </div>
                                         </article>
                                     ))}
@@ -501,7 +502,7 @@ function Resultados() {
 
                                 <div className={`rank-list ${abaRanking === 'grupos' ? 'active' : ''}`}>
                                     {sortRanking(gruposAgrupados).slice(0, 10).map((grupo, i) => (
-                                        <article className="rank" key={i}>
+                                        <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'grupo',valor:grupo.nome}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                             <div className="rank-top">
                                                 <div className="medal">{i + 1}</div>
                                                 <div className="rname">
@@ -519,6 +520,51 @@ function Resultados() {
                                     ))}
                                 </div>
                             </section>
+
+                            {filtroRank && (() => {
+                                const pedidosFiltrados = dadosProcessados.filter(item => {
+                                    if (filtroRank.tipo === 'marca') return (item.marca || '').trim() === filtroRank.valor.trim();
+                                    if (filtroRank.tipo === 'grupo') return (item.grupo || '').trim() === filtroRank.valor.trim();
+                                    return false;
+                                });
+                                return (
+                                    <>
+                                        <div className="section" id="filtro-rank-detail">
+                                            <h2>📋 {filtroRank.valor.trim()} ({pedidosFiltrados.length})</h2>
+                                            <button onClick={() => setFiltroRank(null)}>✕ Fechar</button>
+                                        </div>
+                                        <div className="orders-list">
+                                            {pedidosFiltrados.map((item, index) => {
+                                                const v = (item.vendedor || '').trim();
+                                                const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                                return (
+                                                    <article className={`product-row ${borderClass}`} key={index}>
+                                                        <div className="product-photo">
+                                                            {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                                <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                            ) : '📦'}
+                                                        </div>
+                                                        <div className="product-info">
+                                                            <h3>{item.titulo || 'Produto'}</h3>
+                                                            <div className="tags">
+                                                                <span className="tag quant">{item.quant_itens} UND.</span>
+                                                                <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                                <span className="tag pid">ID: {item.pedido_id}</span>
+                                                            </div>
+                                                            <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)}</p>
+                                                        </div>
+                                                        <div className="product-profit">
+                                                            <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
+                                                            <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                            <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                        </div>
+                                                    </article>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
 
                             <div className="section">
                                 <h2>Marketplaces</h2>

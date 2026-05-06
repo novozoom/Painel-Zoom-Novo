@@ -328,9 +328,10 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
   background:rgba(0,0,0,.18);
   border:1px solid rgba(255,255,255,.10);
   margin-bottom:10px;
+  text-align:center;
 }
 .rank-top{
-  display:flex;align-items:center;gap:11px;
+  display:flex;align-items:center;gap:11px;text-align:left;
 }
 .medal{
   width:36px;height:36px;border-radius:14px;
