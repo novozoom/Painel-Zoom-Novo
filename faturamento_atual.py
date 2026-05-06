@@ -43,45 +43,9 @@ def obter_resultados():
         data_inicio = hoje + " 00:00:00"
         data_fim = hoje + " 23:59:59"
 
-    # Buscar do Supabase
+    # Buscar do Supabase — retornar direto em lowercase (formato que o React espera)
     response = supabase.table('dashboard_pedidos').select('*').gte('data_venda', data_inicio).lte('data_venda', data_fim).execute()
     
-    # Mapear de volta para o formato esperado pelo React
-    resultados = []
-    for item in response.data:
-        resultados.append({
-            "PEDIDO": item.get("pedido_id"),
-            "URL": item.get("url_imagem"),
-            "DATA": item.get("data_venda"),
-            "ORIGEM": item.get("origem"),
-            "ORIGEM_NOME": item.get("origem_nome"),
-            "VENDEDOR": item.get("vendedor"),
-            "VLRFRETE": item.get("vlr_frete_real"),
-            "TOTAL_PEDIDO": item.get("total_pedido"),
-            "VLRFRETE_REAL": item.get("vlr_frete_real"),
-            "VLRFRETE_COMPRADOR": item.get("vlr_frete_comprador"),
-            "POSICAO": item.get("posicao"),
-            "INTEGRACAO": item.get("integracao"),
-            "QUANT_ITENS": item.get("quant_itens"),
-            "VLR_UNIT": item.get("vlr_unit"),
-            "VLR_TOTAL": item.get("vlr_total"),
-            "VLR_FRETE": item.get("vlr_frete_real"),
-            "CODID": None,
-            "COD_PEDIDO": item.get("sku"),
-            "SKU": item.get("sku"),
-            "COMISSAO_SKU": item.get("comissao_sku"),
-            "CUSTO_ADICIONAL": item.get("custo_adicional"),
-            "MATERIAL_ID": None,
-            "CUSTO_FRETE": item.get("custo_frete"),
-            "TITULO": item.get("titulo"),
-            "VLR_CUSTO": item.get("vlr_custo"),
-            "CATALOGO": item.get("catalogo"),
-            "FULL": item.get("full_status"),
-            "ITENS": item.get("itens"),
-            "MARCA": item.get("marca"),
-            "GRUPO": item.get("grupo")
-        })
-
-    # Ordenar por PEDIDO decrescente como no SQL original
-    resultados = sorted(resultados, key=lambda x: x['PEDIDO'], reverse=True)
+    # Ordenar por pedido_id decrescente
+    resultados = sorted(response.data, key=lambda x: x.get('pedido_id', ''), reverse=True)
     return jsonify(resultados)
