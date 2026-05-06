@@ -511,6 +511,23 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
 }
 .red{color:var(--red)!important}
 
+/* Sort bar */
+.sort-bar{
+  margin-top:0!important;
+  gap:5px!important;
+}
+.sort-bar button{
+  font-size:11px!important;
+  padding:8px 10px!important;
+  background:rgba(255,255,255,.04)!important;
+  border-color:rgba(255,255,255,.08)!important;
+}
+.sort-bar .active{
+  background:rgba(21,216,255,.12)!important;
+  border-color:rgba(21,216,255,.35)!important;
+  color:var(--cyan)!important;
+}
+
 /* Load more button */
 .load-more{
   width:100%;

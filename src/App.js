@@ -16,6 +16,7 @@ function Resultados() {
     const [filtroAtivo, setFiltroAtivo] = useState('Hoje');
     const [abaRanking, setAbaRanking] = useState('produtos');
     const [rankLimit, setRankLimit] = useState(10);
+    const [ordenacao, setOrdenacao] = useState('pedidos');
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -238,6 +239,17 @@ function Resultados() {
         })).sort((a,b) => b.margem - a.margem);
     }, [dadosProcessados]);
 
+    const sortRanking = (arr) => {
+        const copy = [...arr];
+        switch(ordenacao) {
+            case 'pedidos': return copy.sort((a,b) => b.pedidos - a.pedidos);
+            case 'lucro': return copy.sort((a,b) => b.lucro - a.lucro);
+            case 'faturamento': return copy.sort((a,b) => b.faturamento - a.faturamento);
+            case 'margem': return copy.sort((a,b) => b.margem - a.margem);
+            default: return copy.sort((a,b) => b.pedidos - a.pedidos);
+        }
+    };
+
     const prejuizos = useMemo(() => dadosProcessados.filter(d => d.lucro <= 0).sort((a,b) => a.lucro - b.lucro), [dadosProcessados]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const contasAgrupadas = useMemo(() => agruparPor('origem_nome').sort((a,b) => b.faturamento - a.faturamento), [dadosProcessados]);
@@ -413,9 +425,15 @@ function Resultados() {
                                     <button className={abaRanking === 'marcas' ? 'active' : ''} onClick={() => setAbaRanking('marcas')}>Marcas / Fornec.</button>
                                     <button className={abaRanking === 'grupos' ? 'active' : ''} onClick={() => setAbaRanking('grupos')}>Grupos</button>
                                 </div>
+                                <div className="switches sort-bar">
+                                    <button className={ordenacao === 'pedidos' ? 'active' : ''} onClick={() => setOrdenacao('pedidos')}>📋 Pedidos</button>
+                                    <button className={ordenacao === 'faturamento' ? 'active' : ''} onClick={() => setOrdenacao('faturamento')}>💰 Faturou</button>
+                                    <button className={ordenacao === 'lucro' ? 'active' : ''} onClick={() => setOrdenacao('lucro')}>💚 Lucro</button>
+                                    <button className={ordenacao === 'margem' ? 'active' : ''} onClick={() => setOrdenacao('margem')}>📊 Margem</button>
+                                </div>
 
                                 <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
-                                    {produtosAgrupados.slice(0, rankLimit).map((prod, i) => (
+                                    {sortRanking(produtosAgrupados).slice(0, rankLimit).map((prod, i) => (
                                         <article className="rank" key={i}>
                                             <div className="rank-photo-center">
                                                 {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
@@ -451,7 +469,7 @@ function Resultados() {
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'marcas' ? 'active' : ''}`}>
-                                    {marcasAgrupadas.slice(0, 10).map((marca, i) => (
+                                    {sortRanking(marcasAgrupadas).slice(0, 10).map((marca, i) => (
                                         <article className="rank" key={i}>
                                             <div className="rank-top">
                                                 <div className="medal">{i + 1}</div>
@@ -471,7 +489,7 @@ function Resultados() {
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'grupos' ? 'active' : ''}`}>
-                                    {gruposAgrupados.slice(0, 10).map((grupo, i) => (
+                                    {sortRanking(gruposAgrupados).slice(0, 10).map((grupo, i) => (
                                         <article className="rank" key={i}>
                                             <div className="rank-top">
                                                 <div className="medal">{i + 1}</div>
