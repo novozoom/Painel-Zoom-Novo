@@ -171,6 +171,16 @@ function Resultados() {
     // Processar cálculos dos itens
     const dadosProcessados = useMemo(() => {
         return dados.map(item => {
+            let tituloLimpo = item.titulo || '';
+            let codInterno = item.sku;
+            if (tituloLimpo && tituloLimpo.startsWith('[')) {
+                const fechamento = tituloLimpo.indexOf(']');
+                if (fechamento > 0) {
+                    codInterno = tituloLimpo.substring(1, fechamento);
+                    tituloLimpo = tituloLimpo.substring(fechamento + 1).trim();
+                }
+            }
+
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, item.total_pedido, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
@@ -178,7 +188,7 @@ function Resultados() {
             const valorDeVenda = item.total_pedido;
             const lucro = CalcularTotal(valorDeVenda, taxaFixa, tarifaDeVenda, custoProduto, frete);
             const margemLucro = CalcularMargemLucro(lucro, custoProduto);
-            return { ...item, valorDeVenda, lucro, margemLucro, custoProduto, taxaFixa, tarifaDeVenda, frete };
+            return { ...item, titulo: tituloLimpo, cod_interno: codInterno, valorDeVenda, lucro, margemLucro, custoProduto, taxaFixa, tarifaDeVenda, frete };
         });
     }, [dados]);
 
@@ -213,7 +223,7 @@ function Resultados() {
     const produtosAgrupados = useMemo(() => {
         const mapa = {};
         dadosProcessados.forEach(item => {
-            const val = item.sku;
+            const val = item.cod_interno;
             if(!val) return;
             if (!mapa[val]) {
                 mapa[val] = { 
@@ -446,7 +456,7 @@ function Resultados() {
 
                                 <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
                                     {sortRanking(produtosAgrupados).slice(0, rankLimit).map((prod, i) => (
-                                        <article className="rank" key={i}>
+                                        <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'sku',valor:prod.sku}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                             <div className="rank-photo-center">
                                                 {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
                                                     <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} alt="" loading="lazy" />
@@ -522,49 +532,125 @@ function Resultados() {
                             </section>
 
                             {filtroRank && (() => {
-                                const pedidosFiltrados = dadosProcessados.filter(item => {
-                                    if (filtroRank.tipo === 'marca') return (item.marca || '').trim() === filtroRank.valor.trim();
-                                    if (filtroRank.tipo === 'grupo') return (item.grupo || '').trim() === filtroRank.valor.trim();
-                                    if (filtroRank.tipo === 'conta') return (item.origem_nome || '').trim() === filtroRank.valor.trim();
-                                    return false;
-                                });
-                                return (
-                                    <>
-                                        <div className="section" id="filtro-rank-detail">
-                                            <h2>📋 {filtroRank.valor.trim()} ({pedidosFiltrados.length})</h2>
-                                            <button onClick={() => setFiltroRank(null)}>✕ Fechar</button>
-                                        </div>
-                                        <div className="orders-list">
-                                            {pedidosFiltrados.map((item, index) => {
-                                                const v = (item.vendedor || '').trim();
-                                                const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
-                                                return (
-                                                    <article className={`product-row ${borderClass}`} key={index}>
-                                                        <div className="product-photo">
-                                                            {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
-                                                                <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
-                                                            ) : '📦'}
-                                                        </div>
-                                                        <div className="product-info">
-                                                            <h3>{item.titulo || 'Produto'}</h3>
-                                                            <div className="tags">
-                                                                <span className="tag quant">{item.quant_itens} UND.</span>
-                                                                <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
-                                                                <span className="tag pid">ID: {item.pedido_id}</span>
+                                if (filtroRank.tipo === 'sku') {
+                                    const pedidosFiltrados = dadosProcessados.filter(item => item.cod_interno === filtroRank.valor);
+                                    return (
+                                        <>
+                                            <div className="section" id="filtro-rank-detail">
+                                                <h2>📋 Pedidos: {filtroRank.valor.trim()} ({pedidosFiltrados.length})</h2>
+                                                <button onClick={() => setFiltroRank(null)}>✕ Fechar</button>
+                                            </div>
+                                            <div className="orders-list">
+                                                {pedidosFiltrados.map((item, index) => {
+                                                    const v = (item.vendedor || '').trim();
+                                                    const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                                    return (
+                                                        <article className={`product-row ${borderClass}`} key={index}>
+                                                            <div className="product-photo">
+                                                                {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                                    <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                                ) : '📦'}
                                                             </div>
-                                                            <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)}</p>
+                                                            <div className="product-info">
+                                                                <h3>{item.titulo || 'Produto'}</h3>
+                                                                <div className="tags">
+                                                                    <span className="tag quant">{item.quant_itens} UND.</span>
+                                                                    <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                                    <span className="tag pid">ID: {item.pedido_id}</span>
+                                                                </div>
+                                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)}</p>
+                                                                <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno} | Ref: {item.sku} · Grupo: {item.grupo || 'S/ Grupo'}</p>
+                                                            </div>
+                                                            <div className="product-profit">
+                                                                <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
+                                                                <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                                <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                            </div>
+                                                        </article>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    );
+                                } else {
+                                    // Para Marca, Grupo ou Conta: Agrupar por produto
+                                    const pedidosFiltrados = dadosProcessados.filter(item => {
+                                        if (filtroRank.tipo === 'marca') return (item.marca || '').trim() === filtroRank.valor.trim();
+                                        if (filtroRank.tipo === 'grupo') return (item.grupo || '').trim() === filtroRank.valor.trim();
+                                        if (filtroRank.tipo === 'conta') return (item.origem_nome || '').trim() === filtroRank.valor.trim();
+                                        return false;
+                                    });
+
+                                    const mapa = {};
+                                    pedidosFiltrados.forEach(item => {
+                                        const val = item.cod_interno;
+                                        if(!val) return;
+                                        if (!mapa[val]) {
+                                            mapa[val] = { 
+                                                nome: item.titulo, 
+                                                sku: val, 
+                                                origem: item.origem_nome + ' ' + item.vendedor, 
+                                                url_imagem: item.url_imagem,
+                                                faturamento: 0, lucro: 0, unidades: 0, pedidos: 0,
+                                                custoProduto: 0, taxaFixa: 0, tarifaDeVenda: 0, frete: 0
+                                            };
+                                        }
+                                        mapa[val].faturamento += item.valorDeVenda;
+                                        mapa[val].lucro += item.lucro;
+                                        mapa[val].unidades += item.quant_itens;
+                                        mapa[val].pedidos += 1;
+                                        mapa[val].custoProduto += item.custoProduto;
+                                        mapa[val].taxaFixa += item.taxaFixa;
+                                        mapa[val].tarifaDeVenda += item.tarifaDeVenda;
+                                        mapa[val].frete += item.frete;
+                                    });
+
+                                    const produtosDaCategoria = Object.values(mapa).map(p => ({
+                                        ...p, 
+                                        margem: p.custoProduto > 0 ? (p.lucro / p.custoProduto * 100) : 100 
+                                    }));
+
+                                    return (
+                                        <>
+                                            <div className="section" id="filtro-rank-detail">
+                                                <h2>📦 Top Produtos: {filtroRank.valor.trim()}</h2>
+                                                <button onClick={() => setFiltroRank(null)}>✕ Fechar</button>
+                                            </div>
+                                            <div className="rank-list active" style={{padding: '0 10px'}}>
+                                                {sortRanking(produtosDaCategoria).map((prod, i) => (
+                                                    <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'sku',valor:prod.sku}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
+                                                        <div className="rank-photo-center">
+                                                            {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
+                                                                <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} alt="" loading="lazy" />
+                                                            ) : <span>📦</span>}
                                                         </div>
-                                                        <div className="product-profit">
-                                                            <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
-                                                            <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
-                                                            <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                        <div className="rank-top">
+                                                            <div className="medal">{i + 1}</div>
+                                                            <div className="rname">
+                                                                <h3>{prod.nome || 'Produto Desconhecido'}</h3>
+                                                                <p>SKU {prod.sku}</p>
+                                                                <p className="rank-canal">{prod.origem.trim()}</p>
+                                                            </div>
+                                                            <div className="rmargin">{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
+                                                        </div>
+                                                        <div className="metrics breakdown">
+                                                            <div><span>💰 Venda</span><b>R$ {prod.faturamento.toFixed(2)}</b></div>
+                                                            <div><span>📦 Custo</span><b style={{color:'#ff6b6b'}}>-R$ {prod.custoProduto.toFixed(2)}</b></div>
+                                                            <div><span>🏷️ Taxa</span><b style={{color:'#ff6b6b'}}>-R$ {prod.taxaFixa.toFixed(2)}</b></div>
+                                                            <div><span>📊 Comissão</span><b style={{color:'#ff6b6b'}}>-R$ {prod.tarifaDeVenda.toFixed(2)}</b></div>
+                                                            <div><span>🚚 Frete</span><b style={{color:'#ff6b6b'}}>-R$ {prod.frete.toFixed(2)}</b></div>
+                                                            <div className="lucro-final"><span>✅ Lucro</span><b className={prod.lucro > 0 ? 'green' : 'red'}>R$ {prod.lucro.toFixed(2)}</b></div>
+                                                        </div>
+                                                        <div className="metrics">
+                                                            <div><span>Qtd</span><b>{prod.unidades} un.</b></div>
+                                                            <div><span>Pedidos</span><b>{prod.pedidos}</b></div>
                                                         </div>
                                                     </article>
-                                                );
-                                            })}
-                                        </div>
-                                    </>
-                                );
+                                                ))}
+                                            </div>
+                                        </>
+                                    );
+                                }
                             })()}
 
                             <div className="section">
@@ -614,6 +700,7 @@ function Resultados() {
                                                             <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
                                                             <span className="tag pid">ID: {item.pedido_id}</span>
                                                         </div>
+                                                        <p style={{marginTop: '4px', marginBottom: '4px', color: '#8b8e96', fontSize: '11px'}}>Fabricante: {item.marca} | SKU: {item.cod_interno} | Ref: {item.sku}</p>
                                                         <div className="breakdown-mini">
                                                             <span>Venda R$ {item.valorDeVenda.toFixed(2)}</span>
                                                             <span>Custo R$ {item.custoProduto.toFixed(2)}</span>

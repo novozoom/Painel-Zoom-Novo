@@ -24,7 +24,12 @@ def sync_aton():
         
     try:
         from sync_supabase import sincronizar_pedidos
+        from enrich_ml_api import run_enrichment
         resultado = sincronizar_pedidos(data_inicio, data_fim)
+        
+        # Roda o enriquecimento por cima para o Mercado Livre
+        run_enrichment(data_inicio, data_fim)
+        
         return jsonify(resultado)
     except Exception as e:
         import traceback
