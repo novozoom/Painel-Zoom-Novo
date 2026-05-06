@@ -2,7 +2,6 @@ import React, {useEffect, useState, useMemo} from 'react';
 import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
 import { format } from "date-fns";
-import { ptBR } from 'date-fns/locale';
 
 function Resultados() {
     const [dados, inserirDados] = useState([]);
@@ -162,6 +161,7 @@ function Resultados() {
         // Recarrega silenciosamente a cada 10 seg
         const tempoDeAtualizacao = setInterval(syncEBuscar, 10000);
         return () => clearInterval(tempoDeAtualizacao);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startDate, endDate]);
 
     // Processar cálculos dos itens
@@ -199,8 +199,11 @@ function Resultados() {
         return Object.values(mapa).map(g => ({ ...g, pedidos: g.pedidos.size, margem: g.faturamento > 0 ? (g.lucro / g.faturamento * 100) : 0 })).sort((a,b) => b.lucro - a.lucro);
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const marcasAgrupadas = useMemo(() => agruparPor('MARCA').sort((a,b) => b.margem - a.margem), [dadosProcessados]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const gruposAgrupados = useMemo(() => agruparPor('GRUPO').sort((a,b) => b.margem - a.margem), [dadosProcessados]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const fornecedoresAgrupados = useMemo(() => agruparPor('VENDEDOR'), [dadosProcessados]);
     const produtosAgrupados = useMemo(() => {
         const mapa = {};
