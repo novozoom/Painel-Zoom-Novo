@@ -417,12 +417,12 @@ function Resultados() {
                                 <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
                                     {produtosAgrupados.slice(0, rankLimit).map((prod, i) => (
                                         <article className="rank" key={i}>
+                                            <div className="rank-photo-center">
+                                                {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
+                                                    <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} alt="" loading="lazy" />
+                                                ) : <span>📦</span>}
+                                            </div>
                                             <div className="rank-top">
-                                                <div className="rank-photo">
-                                                    {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
-                                                        <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} alt="" loading="lazy" />
-                                                    ) : <span>📦</span>}
-                                                </div>
                                                 <div className="medal">{i + 1}</div>
                                                 <div className="rname">
                                                     <h3>{prod.nome || 'Produto Desconhecido'}</h3>

@@ -486,26 +486,25 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
 .tags .tag.cat{background:linear-gradient(135deg,#ff9d22,#ff3d73);color:#fff;border:none}
 .tags .tag.full{background:#25f56a;color:#000;border:none;box-shadow:0 0 12px rgba(37,245,106,.3)}
 
-/* Rank product photo */
-.rank-photo{
-  width:54px;height:54px;min-width:54px;border-radius:16px;
+/* Rank product photo - LARGE centered */
+.rank-photo-center{
+  width:120px;height:120px;margin:0 auto 12px;border-radius:22px;
   background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.96),rgba(235,237,240,.84) 45%,rgba(150,155,165,.30) 100%);
-  display:grid;place-items:center;font-size:26px;overflow:hidden;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 8px 18px rgba(0,0,0,.18);
+  display:grid;place-items:center;font-size:48px;overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 12px 28px rgba(0,0,0,.22);
 }
-.rank-photo img{width:100%;height:100%;object-fit:contain}
+.rank-photo-center img{width:100%;height:100%;object-fit:contain}
 .rank-canal{color:var(--cyan)!important;font-size:10px!important;font-weight:700}
 
-/* Cost breakdown grid */
+/* Cost breakdown grid - 3 columns, Lucro next to Frete */
 .metrics.breakdown{
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:6px;
 }
 .metrics.breakdown div{
   padding:7px 8px;
 }
 .lucro-final{
-  grid-column:1/-1;
   background:rgba(60,255,154,.08)!important;
   border:1px solid rgba(60,255,154,.20)!important;
   border-radius:14px;
