@@ -12,8 +12,7 @@ function Resultados() {
     
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
-    const [filtroAtivo, setFiltroAtivo] = useState('Hoje');
-    const [abaRanking, setAbaRanking] = useState('produtos'); // produtos, marcas, grupos
+    const [abaPrincipal, setAbaPrincipal] = useState('home'); // home, pedidos
 
     const setDateRange = (rangeType) => {
         const hoje = new Date();
@@ -125,22 +124,23 @@ function Resultados() {
 
             const url = `https://painel-zoom-novo.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
             const respostaDados = await axios.get(url);
-            const dadosFiltrados = respostaDados.data.filter(dado => dado.POSICAO.trim() !== "CANCELADO");
+            const dadosFiltrados = respostaDados.data.filter(dado => dado.posicao.trim() !== "CANCELADO" && dado.posicao.trim() !== "CANCELADO        ");
 
             const pedidosUnicos = new Set();
             const dadosSemDuplicatas = [];
             let somaValoresUnicos = 0;
 
             dadosFiltrados.forEach(dado => {
-                if (!pedidosUnicos.has(dado.PEDIDO)) {
-                    pedidosUnicos.add(dado.PEDIDO);
+                if (!pedidosUnicos.has(dado.pedido_id)) {
+                    pedidosUnicos.add(dado.pedido_id);
                     dadosSemDuplicatas.push(dado);
-                    somaValoresUnicos += dado.TOTAL_PEDIDO;
+                    somaValoresUnicos += dado.total_pedido;
                 } else {
-                    const existente = dadosSemDuplicatas.find(item => item.COD_INTERNO === dado.COD_INTERNO);
+                    // No novo motor o ID do produto é o sku
+                    const existente = dadosSemDuplicatas.find(item => item.sku === dado.sku && item.pedido_id === dado.pedido_id);
                     if (!existente) {
                         dadosSemDuplicatas.push(dado);
-                        somaValoresUnicos += dado.TOTAL_PEDIDO;
+                        somaValoresUnicos += dado.total_pedido;
                     }
                 }
             });
@@ -167,14 +167,14 @@ function Resultados() {
     // Processar cálculos dos itens
     const dadosProcessados = useMemo(() => {
         return dados.map(item => {
-            const taxaFixa = calcularTaxaFixa(item.ORIGEM, item.CUSTO_ADICIONAL, item.QUANT_ITENS, item.CUSTO_FRETE);
-            const tarifaDeVenda = CalcularTarifaDeVenda(item.ORIGEM, item.TOTAL_PEDIDO, item.COMISSAO_SKU);
-            const custoProduto = CalcularCustoProduto(item.QUANT_ITENS, item.VLR_CUSTO);
-            const frete = CalcularFrete(item.VLRFRETE_REAL, item.VLRFRETE_COMPRADOR, item.ORIGEM, item.QUANT_ITENS);
-            const valorDeVenda = item.TOTAL_PEDIDO;
+            const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
+            const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, item.total_pedido, item.comissao_sku);
+            const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
+            const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, item.quant_itens);
+            const valorDeVenda = item.total_pedido;
             const lucro = CalcularTotal(valorDeVenda, taxaFixa, tarifaDeVenda, custoProduto, frete);
             const margemLucro = CalcularMargemLucro(lucro, custoProduto);
-            return { ...item, valorDeVenda, lucro, margemLucro, custoProduto };
+            return { ...item, valorDeVenda, lucro, margemLucro, custoProduto, taxaFixa, tarifaDeVenda, frete };
         });
     }, [dados]);
 
@@ -186,42 +186,43 @@ function Resultados() {
     const agruparPor = (chave) => {
         const mapa = {};
         dadosProcessados.forEach(item => {
-            const val = (item[chave] && item[chave].trim() !== '') ? item[chave] : 'Diversos';
+            const valRaw = item[chave] ? String(item[chave]) : 'Diversos';
+            const val = valRaw.trim() !== '' ? valRaw.trim() : 'Diversos';
             if (!mapa[val]) {
                 mapa[val] = { nome: val, faturamento: 0, lucro: 0, pedidos: new Set(), unidades: 0, skus: 0 };
             }
             mapa[val].faturamento += item.valorDeVenda;
             mapa[val].lucro += item.lucro;
-            mapa[val].pedidos.add(item.PEDIDO);
-            mapa[val].unidades += item.QUANT_ITENS;
+            mapa[val].pedidos.add(item.pedido_id);
+            mapa[val].unidades += item.quant_itens;
             mapa[val].skus += 1;
         });
         return Object.values(mapa).map(g => ({ ...g, pedidos: g.pedidos.size, margem: g.faturamento > 0 ? (g.lucro / g.faturamento * 100) : 0 })).sort((a,b) => b.lucro - a.lucro);
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const marcasAgrupadas = useMemo(() => agruparPor('MARCA').sort((a,b) => b.margem - a.margem), [dadosProcessados]);
+    const marcasAgrupadas = useMemo(() => agruparPor('marca').sort((a,b) => b.margem - a.margem), [dadosProcessados]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const gruposAgrupados = useMemo(() => agruparPor('GRUPO').sort((a,b) => b.margem - a.margem), [dadosProcessados]);
+    const gruposAgrupados = useMemo(() => agruparPor('grupo').sort((a,b) => b.margem - a.margem), [dadosProcessados]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const fornecedoresAgrupados = useMemo(() => agruparPor('VENDEDOR'), [dadosProcessados]);
+    const fornecedoresAgrupados = useMemo(() => agruparPor('vendedor'), [dadosProcessados]);
     const produtosAgrupados = useMemo(() => {
         const mapa = {};
         dadosProcessados.forEach(item => {
-            const val = item.COD_INTERNO;
+            const val = item.sku;
             if(!val) return;
             if (!mapa[val]) {
                 mapa[val] = { 
-                    nome: item.TITULO, 
+                    nome: item.titulo, 
                     sku: val, 
-                    origem: item.ORIGEM_NOME + ' ' + item.VENDEDOR, 
+                    origem: item.origem_nome + ' ' + item.vendedor, 
                     faturamento: 0, lucro: 0, unidades: 0, pedidos: 0,
                     custoProduto: 0
                 };
             }
             mapa[val].faturamento += item.valorDeVenda;
             mapa[val].lucro += item.lucro;
-            mapa[val].unidades += item.QUANT_ITENS;
+            mapa[val].unidades += item.quant_itens;
             mapa[val].pedidos += 1;
             mapa[val].custoProduto += item.custoProduto;
         });
@@ -249,11 +250,9 @@ function Resultados() {
     const rolarParaRanking = () => {
         const el = document.getElementById('mais-margem');
         if(el) el.scrollIntoView({behavior:'smooth'});
-    };
-
-    return (
-        <main className="app">
-            <div className="glow"></div><div className="glow two"></div>
+    };    return (
+        <main className="phone">
+            <div className="aura"></div>
             
             {isLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', position: 'relative', zIndex: 10 }}>
@@ -262,195 +261,260 @@ function Resultados() {
             ) : (
                 <>
                     <header className="top">
-                        <button className="menu">☰</button>
-                        <div className="title"><h1>Olá, Filipe 👋</h1><p>Central rápida do seu resultado de hoje</p></div>
-                        <button className="bell">🔔</button>
+                        <button className="iconbtn">☰</button>
+                        <div className="title">
+                            <h1>Platinum OS</h1>
+                            <p className="live">vendas, lucro e margem ao vivo</p>
+                        </div>
+                        <button className="iconbtn" onClick={syncEBuscar}>↻</button>
                     </header>
 
-                    <nav className="tabs">
+                    <nav className="segment">
                         <button className={filtroAtivo === 'Hoje' ? 'active' : ''} onClick={() => setDateRange('Hoje')}>Hoje</button>
                         <button className={filtroAtivo === 'Ontem' ? 'active' : ''} onClick={() => setDateRange('Ontem')}>Ontem</button>
                         <button className={filtroAtivo === '7 dias' ? 'active' : ''} onClick={() => setDateRange('7 dias')}>7 dias</button>
                         <button className={filtroAtivo === '30 dias' ? 'active' : ''} onClick={() => setDateRange('30 dias')}>30 dias</button>
                     </nav>
 
-                    <div className="datebar">
+                    <div className="date">
                         <button className="range">📅 {format(startDate, 'dd/MM/yyyy')} até {format(endDate, 'dd/MM/yyyy')}</button>
                         <button onClick={syncEBuscar}>↻</button>
                     </div>
 
-                    <section className="hero" id="vendas-dia">
-                        <div className="label">Vendas do Período</div>
-                        <div className="big">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(faturamentoDeHoje)}</div>
-                        <div className="sub">
-                            {desempenhoDia > 0 ? <span className="up">↑ {desempenhoDia.toFixed(1)}%</span> : <span className="down">↓ {Math.abs(desempenhoDia).toFixed(1)}%</span>} vs ontem • {numeroDePedidosUnicos} pedidos • lucro R$ {lucroLiquidoTotal.toFixed(0)}
-                        </div>
-                        <svg className="spark" viewBox="0 0 320 70" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
-                                    <stop stopColor={desempenhoDia >= 0 ? "#25f56a" : "#ff3d73"} stopOpacity=".85"/>
-                                    <stop offset="1" stopColor={desempenhoDia >= 0 ? "#25f56a" : "#ff3d73"} stopOpacity="0"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M0,58 C34,44 45,29 80,36 C116,44 126,22 166,24 C200,26 208,44 246,35 C276,28 293,17 320,20 L320,70 L0,70 Z" fill="url(#g)"/>
-                            <path d="M0,58 C34,44 45,29 80,36 C116,44 126,22 166,24 C200,26 208,44 246,35 C276,28 293,17 320,20" fill="none" stroke={desempenhoDia >= 0 ? "#25f56a" : "#ff3d73"} strokeWidth="4"/>
-                        </svg>
-                        <div className="hero-actions">
-                            <button className="main">Abrir vendas do dia ›</button>
-                            <button>Ver pedidos ›</button>
-                        </div>
-                    </section>
+                    {abaPrincipal === 'home' && (
+                        <div className="page-content">
+                            <section className="hero">
+                                <div className="label">vendas do período</div>
+                                <h2>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(faturamentoDeHoje)}</h2>
+                                <div className="sub">
+                                    {desempenhoDia > 0 ? <span className="orange">↑ {desempenhoDia.toFixed(1)}% vs ontem</span> : <span className="green">↓ {Math.abs(desempenhoDia).toFixed(1)}% vs ontem</span>} · {numeroDePedidosUnicos} pedidos
+                                </div>
 
-                    <div className="section"><h2>O que você deseja consultar?</h2><button>Personalizar</button></div>
+                                <div className="hero-row">
+                                    <div className="mini"><span>Lucro</span><b>R$ {lucroLiquidoTotal.toFixed(0)}</b></div>
+                                    <div className="mini"><span>Margem</span><b className="green">{faturamentoDeHoje > 0 ? (lucroLiquidoTotal / faturamentoDeHoje * 100).toFixed(1) : 0}%</b></div>
+                                    <div className="mini"><span>Ticket</span><b>R$ {numeroDePedidosUnicos > 0 ? (faturamentoDeHoje / numeroDePedidosUnicos).toFixed(0) : 0}</b></div>
+                                </div>
 
-                    <section className="quick-grid">
-                        <button className="quick cyan">
-                            <span className="tag">ranking</span><span className="ico">🔥</span>
-                            <h3>Produtos mais vendidos</h3>
-                            <div className="value">{numeroDePedidosUnicos} pedidos</div>
-                            <p>abre produtos vendidos hoje com lucro e margem</p>
-                        </button>
-                        <button className="quick purple">
-                            <span className="tag">top</span><span className="ico">🏷️</span>
-                            <h3>Marca mais vendida</h3>
-                            <div className="value">{marcaTop ? marcaTop.nome : '-'}</div>
-                            <p>R$ {marcaTop ? marcaTop.faturamento.toFixed(0) : 0} vendidos • {marcaTop ? marcaTop.unidades : 0} unid.</p>
-                        </button>
-                        <button className="quick orange">
-                            <span className="tag">contas</span><span className="ico">🛒</span>
-                            <h3>Vendas por marketplace</h3>
-                            <div className="value">ML {mercadoLivre.pedidos}</div>
-                            <p>abre cards por marketplace e depois pedidos</p>
-                        </button>
-                        <button className="quick green" onClick={rolarParaRanking}>
-                            <span className="tag">lucro</span><span className="ico">💎</span>
-                            <h3>Produtos com mais margem</h3>
-                            <div className="value">{produtoMargemTop && isFinite(produtoMargemTop.margem) ? produtoMargemTop.margem.toFixed(1) : 0}%</div>
-                            <p>produto, marca/fornecedor e grupo campeão</p>
-                        </button>
-                        <button className="quick red">
-                            <span className="tag">urgente</span><span className="ico">⚠️</span>
-                            <h3>Pedidos com prejuízo</h3>
-                            <div className="value">{prejuizos.length}</div>
-                            <p>corrigir preço, frete, taxa ou custo</p>
-                        </button>
-                        <button className="quick purple">
-                            <span className="tag">platinum</span><span className="ico">🚀</span>
-                            <h3>Oportunidades de conta</h3>
-                            <div className="value">0</div>
-                            <p>Best forte e outras contas fracas</p>
-                        </button>
-                    </section>
+                                <svg className="spark" viewBox="0 0 320 70" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
+                                            <stop stopColor="#ff6a1a" stopOpacity=".65"/>
+                                            <stop offset="1" stopColor="#ff6a1a" stopOpacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,55 C30,47 43,20 74,28 C105,37 112,49 145,35 C174,22 190,20 218,33 C246,45 265,30 287,20 C302,13 312,16 320,10 L320,70 L0,70 Z" fill="url(#area)"/>
+                                    <path d="M0,55 C30,47 43,20 74,28 C105,37 112,49 145,35 C174,22 190,20 218,33 C246,45 265,30 287,20 C302,13 312,16 320,10" fill="none" stroke="#ff8a3d" strokeWidth="4"/>
+                                    <path d="M0,62 C40,55 58,48 87,54 C119,62 134,48 160,51 C190,55 205,63 231,55 C260,47 286,55 320,44" fill="none" stroke="#15d8ff" strokeWidth="2" opacity=".8"/>
+                                </svg>
 
-                    <div className="section" id="mais-margem"><h2>💎 Mais margem hoje</h2><button>Abrir tela</button></div>
-                    
-                    <section className="margin-panel">
-                        <div className="panel-head">
-                            <h2>Ranking de margem</h2>
-                            <div className="score">mín. lucro</div>
-                        </div>
-                        <div className="switches">
-                            <button className={abaRanking === 'produtos' ? 'active' : ''} onClick={() => setAbaRanking('produtos')}>Produtos</button>
-                            <button className={abaRanking === 'marcas' ? 'active' : ''} onClick={() => setAbaRanking('marcas')}>Marcas / Fornec.</button>
-                            <button className={abaRanking === 'grupos' ? 'active' : ''} onClick={() => setAbaRanking('grupos')}>Grupos</button>
-                        </div>
+                                <div className="cta">
+                                    <button className="main" onClick={() => setAbaPrincipal('pedidos')}>Ver pedidos ›</button>
+                                </div>
+                            </section>
 
-                        <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
-                            {produtosAgrupados.slice(0, 10).map((prod, i) => (
-                                <article className="rank-item" key={i}>
-                                    <div className="rank-top">
-                                        <div className="medal">{i + 1}</div>
-                                        <div className="rank-name">
-                                            <h3>{prod.nome || 'Produto Desconhecido'}</h3>
-                                            <p>SKU {prod.sku} • {prod.origem}</p>
-                                        </div>
-                                        <div className="margin">{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
-                                    </div>
-                                    <div className="rank-metrics">
-                                        <div><span>Venda</span><b>R$ {(prod.faturamento/prod.unidades || 0).toFixed(2)}</b></div>
-                                        <div><span>Lucro</span><b style={{color:'var(--green)'}}>R$ {prod.lucro.toFixed(2)}</b></div>
-                                        <div><span>Qtd</span><b>{prod.unidades} un.</b></div>
-                                    </div>
+                            <div className="section">
+                                <h2>O que consultar agora?</h2>
+                            </div>
+
+                            <section className="quick-grid">
+                                <article className="tile cyan" onClick={() => {rolarParaRanking(); setAbaRanking('produtos');}}>
+                                    <span className="badge">ranking</span>
+                                    <span className="ico">🔥</span>
+                                    <h3>Produtos mais vendidos</h3>
+                                    <div className="num">{produtosAgrupados.length}</div>
+                                    <p>ranking com custo, lucro e margem</p>
                                 </article>
-                            ))}
-                        </div>
 
-                        <div className={`rank-list ${abaRanking === 'marcas' ? 'active' : ''}`}>
-                            {marcasAgrupadas.slice(0, 10).map((marca, i) => (
-                                <article className="rank-item" key={i}>
-                                    <div className="rank-top">
-                                        <div className="medal">{i + 1}</div>
-                                        <div className="rank-name">
-                                            <h3>{marca.nome}</h3>
-                                            <p>{marca.skus} SKUs vendidos</p>
-                                        </div>
-                                        <div className="margin">{isFinite(marca.margem) ? marca.margem.toFixed(1) : 0}%</div>
-                                    </div>
-                                    <div className="rank-metrics">
-                                        <div><span>Faturou</span><b>R$ {marca.faturamento.toFixed(0)}</b></div>
-                                        <div><span>Lucro</span><b style={{color:'var(--green)'}}>R$ {marca.lucro.toFixed(0)}</b></div>
-                                        <div><span>Qtd</span><b>{marca.unidades} un.</b></div>
-                                    </div>
+                                <article className="tile" onClick={() => {rolarParaRanking(); setAbaRanking('marcas');}}>
+                                    <span className="badge">top</span>
+                                    <span className="ico">🏷️</span>
+                                    <h3>Marca / Fornecedor</h3>
+                                    <div className="num" style={{fontSize:'20px'}}>{marcaTop ? (marcaTop.nome.length > 12 ? marcaTop.nome.substring(0,12)+'...' : marcaTop.nome) : '-'}</div>
+                                    <p>R$ {marcaTop ? marcaTop.faturamento.toFixed(0) : 0} · {marcaTop ? marcaTop.unidades : 0} unid.</p>
                                 </article>
-                            ))}
-                        </div>
 
-                        <div className={`rank-list ${abaRanking === 'grupos' ? 'active' : ''}`}>
-                            {gruposAgrupados.slice(0, 10).map((grupo, i) => (
-                                <article className="rank-item" key={i}>
-                                    <div className="rank-top">
-                                        <div className="medal">{i + 1}</div>
-                                        <div className="rank-name">
-                                            <h3>{grupo.nome}</h3>
-                                            <p>{grupo.skus} SKUs vendidos</p>
-                                        </div>
-                                        <div className="margin">{isFinite(grupo.margem) ? grupo.margem.toFixed(1) : 0}%</div>
-                                    </div>
-                                    <div className="rank-metrics">
-                                        <div><span>Faturou</span><b>R$ {grupo.faturamento.toFixed(0)}</b></div>
-                                        <div><span>Lucro</span><b style={{color:'var(--green)'}}>R$ {grupo.lucro.toFixed(0)}</b></div>
-                                        <div><span>Pedidos</span><b>{grupo.pedidos}</b></div>
-                                    </div>
+                                <article className="tile purple">
+                                    <span className="badge">contas</span>
+                                    <span className="ico">🛒</span>
+                                    <h3>Marketplaces</h3>
+                                    <div className="num">ML {mercadoLivre.pedidos}</div>
+                                    <p>abre vendas por canal e conta</p>
                                 </article>
-                            ))}
-                        </div>
-                    </section>
 
-                    <div className="section"><h2>Vendas por marketplace</h2><button>Ver todos</button></div>
-                    
-                    <section className="market-grid">
-                        <article className="market">
-                            <h3>Mercado Livre</h3>
-                            <div className="v">{mercadoLivre.pedidos}</div>
-                            <p>R$ {mercadoLivre.faturamento.toFixed(2)}</p>
-                            <div className="bar"><i style={{width: `${(mercadoLivre.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                        </article>
-                        <article className="market">
-                            <h3>Shopee</h3>
-                            <div className="v">{shopee.pedidos}</div>
-                            <p>R$ {shopee.faturamento.toFixed(2)}</p>
-                            <div className="bar"><i style={{width: `${(shopee.faturamento/totalMarketplacesFat)*100}%`, background: 'linear-gradient(90deg,var(--orange),var(--yellow))'}}></i></div>
-                        </article>
-                        <article className="market">
-                            <h3>Magalu</h3>
-                            <div className="v">{magalu.pedidos}</div>
-                            <p>R$ {magalu.faturamento.toFixed(2)}</p>
-                            <div className="bar"><i style={{width: `${(magalu.faturamento/totalMarketplacesFat)*100}%`, background: 'linear-gradient(90deg,var(--blue),var(--cyan))'}}></i></div>
-                        </article>
-                        <article className="market">
-                            <h3>Outros</h3>
-                            <div className="v">{outrosPedidos}</div>
-                            <p>R$ {outrosFaturamento.toFixed(2)}</p>
-                            <div className="bar"><i style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`, background: 'linear-gradient(90deg,var(--purple),var(--pink))'}}></i></div>
-                        </article>
-                    </section>
+                                <article className="tile green" onClick={() => {rolarParaRanking(); setAbaRanking('produtos');}}>
+                                    <span className="badge">lucro</span>
+                                    <span className="ico">💎</span>
+                                    <h3>Mais margem</h3>
+                                    <div className="num">{produtoMargemTop && isFinite(produtoMargemTop.margem) ? produtoMargemTop.margem.toFixed(1) : 0}%</div>
+                                    <p>produto campeão</p>
+                                </article>
+
+                                <article className="tile red">
+                                    <span className="badge">urgente</span>
+                                    <span className="ico">⚠️</span>
+                                    <h3>Pedidos com prejuízo</h3>
+                                    <div className="num">{prejuizos.length}</div>
+                                    <p>corrigir preço, frete ou taxa</p>
+                                </article>
+
+                                <article className="tile">
+                                    <span className="badge">platinum</span>
+                                    <span className="ico">🚀</span>
+                                    <h3>Oportunidades</h3>
+                                    <div className="num">0</div>
+                                    <p>produtos para subir em outras contas</p>
+                                </article>
+                            </section>
+
+                            <div className="section" id="mais-margem">
+                                <h2>💎 Mais margem hoje</h2>
+                            </div>
+                            
+                            <section className="infocard">
+                                <div className="info-head">
+                                    <h2>Ranking inteligente</h2>
+                                </div>
+
+                                <div className="switches">
+                                    <button className={abaRanking === 'produtos' ? 'active' : ''} onClick={() => setAbaRanking('produtos')}>Produtos</button>
+                                    <button className={abaRanking === 'marcas' ? 'active' : ''} onClick={() => setAbaRanking('marcas')}>Marcas / Fornec.</button>
+                                    <button className={abaRanking === 'grupos' ? 'active' : ''} onClick={() => setAbaRanking('grupos')}>Grupos</button>
+                                </div>
+
+                                <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
+                                    {produtosAgrupados.slice(0, 10).map((prod, i) => (
+                                        <article className="rank" key={i}>
+                                            <div className="rank-top">
+                                                <div className="medal">{i + 1}</div>
+                                                <div className="rname">
+                                                    <h3>{prod.nome || 'Produto Desconhecido'}</h3>
+                                                    <p>SKU {prod.sku} • {prod.origem}</p>
+                                                </div>
+                                                <div className="rmargin">{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
+                                            </div>
+                                            <div className="metrics">
+                                                <div><span>Venda</span><b>R$ {(prod.faturamento/prod.unidades || 0).toFixed(2)}</b></div>
+                                                <div><span>Lucro</span><b className="green">R$ {prod.lucro.toFixed(2)}</b></div>
+                                                <div><span>Qtd</span><b>{prod.unidades} un.</b></div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+
+                                <div className={`rank-list ${abaRanking === 'marcas' ? 'active' : ''}`}>
+                                    {marcasAgrupadas.slice(0, 10).map((marca, i) => (
+                                        <article className="rank" key={i}>
+                                            <div className="rank-top">
+                                                <div className="medal">{i + 1}</div>
+                                                <div className="rname">
+                                                    <h3>{marca.nome}</h3>
+                                                    <p>{marca.skus} SKUs vendidos</p>
+                                                </div>
+                                                <div className="rmargin">{isFinite(marca.margem) ? marca.margem.toFixed(1) : 0}%</div>
+                                            </div>
+                                            <div className="metrics">
+                                                <div><span>Faturou</span><b>R$ {marca.faturamento.toFixed(0)}</b></div>
+                                                <div><span>Lucro</span><b className="green">R$ {marca.lucro.toFixed(0)}</b></div>
+                                                <div><span>Qtd</span><b>{marca.unidades} un.</b></div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+
+                                <div className={`rank-list ${abaRanking === 'grupos' ? 'active' : ''}`}>
+                                    {gruposAgrupados.slice(0, 10).map((grupo, i) => (
+                                        <article className="rank" key={i}>
+                                            <div className="rank-top">
+                                                <div className="medal">{i + 1}</div>
+                                                <div className="rname">
+                                                    <h3>{grupo.nome}</h3>
+                                                    <p>{grupo.skus} SKUs vendidos</p>
+                                                </div>
+                                                <div className="rmargin">{isFinite(grupo.margem) ? grupo.margem.toFixed(1) : 0}%</div>
+                                            </div>
+                                            <div className="metrics">
+                                                <div><span>Faturou</span><b>R$ {grupo.faturamento.toFixed(0)}</b></div>
+                                                <div><span>Lucro</span><b className="green">R$ {grupo.lucro.toFixed(0)}</b></div>
+                                                <div><span>Pedidos</span><b>{grupo.pedidos}</b></div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <div className="section">
+                                <h2>Marketplaces</h2>
+                            </div>
+                            
+                            <section className="infocard market">
+                                <div className="market-row">
+                                    <b>Mercado Livre</b>
+                                    <div className="track"><i className="mlbar" style={{width: `${(mercadoLivre.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{mercadoLivre.pedidos}</span>
+                                </div>
+                                <div className="market-row">
+                                    <b>Shopee</b>
+                                    <div className="track"><i className="shopeebar" style={{width: `${(shopee.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{shopee.pedidos}</span>
+                                </div>
+                                <div className="market-row">
+                                    <b>Magalu</b>
+                                    <div className="track"><i className="magalubar" style={{width: `${(magalu.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{magalu.pedidos}</span>
+                                </div>
+                                <div className="market-row">
+                                    <b>Outros</b>
+                                    <div className="track"><i className="outrosbar" style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{outrosPedidos}</span>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {abaPrincipal === 'pedidos' && (
+                        <div className="page-content pedidos-view">
+                            <div className="section" style={{marginTop:'0'}}>
+                                <h2>Todos os {dadosProcessados.length} pedidos</h2>
+                            </div>
+                            
+                            <div className="orders-list">
+                                {dadosProcessados.map((item, index) => {
+                                    return (
+                                        <article className="product-row" key={index}>
+                                            <div className="product-photo">
+                                                {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                    <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="produto" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                ) : '📦'}
+                                            </div>
+                                            <div className="product-info">
+                                                <h3>{item.titulo || 'Produto não cadastrado'}</h3>
+                                                <div className="tags">
+                                                    <span className="tag quant">{item.quant_itens} UND.</span>
+                                                    <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                    <span className="tag pid">ID: {item.pedido_id}</span>
+                                                    {item.catalogo === 'S' && <span className="tag cat">⚡ CATÁLOGO</span>}
+                                                    {item.full_status === 'TRUE' && <span className="tag full">⚡ FULL</span>}
+                                                </div>
+                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)}</p>
+                                            </div>
+                                            <div className="product-profit">
+                                                <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 
             <div className="bottom">
                 <nav className="nav">
-                    <div className="active"><b>⌂</b>Home</div>
-                    <div><b>▣</b>Pedidos</div>
+                    <div className={abaPrincipal === 'home' ? 'active' : ''} onClick={() => setAbaPrincipal('home')}><b>⌂</b>Home</div>
+                    <div className={abaPrincipal === 'pedidos' ? 'active' : ''} onClick={() => setAbaPrincipal('pedidos')}><b>▣</b>Pedidos</div>
                     <div><span className="plus">+</span></div>
                     <div><b>◇</b>Margem</div>
                     <div><b>•••</b>Mais</div>
