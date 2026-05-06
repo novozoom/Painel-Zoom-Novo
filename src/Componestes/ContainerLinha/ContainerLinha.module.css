@@ -1,0 +1,16 @@
+.container {
+    gap: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 20px;
+    min-width: 100%;
+}
+@media (max-width: 740px) {
+    .container {
+        gap: 20px;
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-top: 20px;
+        min-width: 100%;
+    }
+}

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: zoom-dash-render
+    env: python
+    plan: free
+    buildCommand: |
+      ./install_odbc.sh
+      pip install -r requirements.txt
+    startCommand: |
+      python app.py
