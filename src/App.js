@@ -92,7 +92,7 @@ function Resultados() {
     useEffect(() => {
         const buscarDadosOntem = async () => {
             try {
-                const respostaDados = await axios.get('https://zoom-dash-render.onrender.com/api/faturamento_ontem');
+                const respostaDados = await axios.get('https://painel-zoom-novo.onrender.com/api/faturamento_ontem');
                 const pedidosUnicos = new Set();
                 let somaTotal = 0;
                 respostaDados.data.forEach(item => {
@@ -117,13 +117,13 @@ function Resultados() {
             
             // Dispara o sync na nuvem silenciosamente
             try {
-                await axios.post(`https://zoom-dash-render.onrender.com/api/sync`, {
+                await axios.post(`https://painel-zoom-novo.onrender.com/api/sync`, {
                     data_inicio: dataInicioStr,
                     data_fim: dataFimStr
                 });
             } catch(e) { console.log('Erro no sync, buscando o que ja tem:', e); }
 
-            const url = `https://zoom-dash-render.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
+            const url = `https://painel-zoom-novo.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
             const respostaDados = await axios.get(url);
             const dadosFiltrados = respostaDados.data.filter(dado => dado.POSICAO.trim() !== "CANCELADO");
 
