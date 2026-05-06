@@ -255,6 +255,30 @@ function Resultados() {
     const outrosPedidos = fornecedoresAgrupados.filter(f => !['MERCADO LIVRE', 'SHOPEE', 'MAGAZINE LUIZA'].includes(f.nome)).reduce((sum, f) => sum + f.pedidos, 0);
     const totalMarketplacesFat = faturamentoDeHoje || 1;
 
+    // Full data
+    const fullData = useMemo(() => {
+        const items = dadosProcessados.filter(d => d.full_status === 'TRUE');
+        const porVendedor = {};
+        const porConta = {};
+        items.forEach(item => {
+            const v = (item.vendedor || '').trim();
+            if (!porVendedor[v]) porVendedor[v] = { nome: v, pedidos: new Set(), faturamento: 0 };
+            porVendedor[v].pedidos.add(item.pedido_id);
+            porVendedor[v].faturamento += item.valorDeVenda;
+            const c = (item.origem_nome || '').trim();
+            if (!porConta[c]) porConta[c] = { nome: c, vendedor: v, pedidos: new Set(), faturamento: 0, lucro: 0 };
+            porConta[c].pedidos.add(item.pedido_id);
+            porConta[c].faturamento += item.valorDeVenda;
+            porConta[c].lucro += item.lucro;
+        });
+        const ml = porVendedor['MERCADO LIVRE'] || { pedidos: new Set() };
+        const sh = porVendedor['SHOPEE'] || { pedidos: new Set() };
+        const mg = porVendedor['MAGAZINE LUIZA'] || { pedidos: new Set() };
+        const totalFull = new Set(items.map(i => i.pedido_id)).size;
+        const contas = Object.values(porConta).map(c => ({ ...c, pedidos: c.pedidos.size })).sort((a,b) => b.pedidos - a.pedidos);
+        return { ml: ml.pedidos.size, sh: sh.pedidos.size, mg: mg.pedidos.size, total: totalFull, contas, items };
+    }, [dadosProcessados]);
+
     const rolarParaRanking = () => {
         const el = document.getElementById('mais-margem');
         if(el) el.scrollIntoView({behavior:'smooth'});
@@ -366,12 +390,12 @@ function Resultados() {
                                     <p>corrigir preço, frete ou taxa</p>
                                 </article>
 
-                                <article className="tile">
-                                    <span className="badge">platinum</span>
-                                    <span className="ico">🚀</span>
-                                    <h3>Oportunidades</h3>
-                                    <div className="num">0</div>
-                                    <p>produtos para subir em outras contas</p>
+                                <article className="tile cyan" onClick={() => { const el = document.getElementById('full-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>
+                                    <span className="badge">fulfillment</span>
+                                    <span className="ico">📦</span>
+                                    <h3>Vendas Full</h3>
+                                    <div className="num">{fullData.total}</div>
+                                    <p style={{fontSize:'11px',lineHeight:'1.3',marginTop:'6px'}}>🟡 ML {fullData.ml} · 🟠 Shopee {fullData.sh} · 🔵 Magalu {fullData.mg}</p>
                                 </article>
                             </section>
 
@@ -547,6 +571,31 @@ function Resultados() {
                                         <div className="conta-values">
                                             <b>R$ {conta.faturamento.toFixed(0)}</b>
                                             <span className={conta.lucro > 0 ? 'green' : 'red'}>Lucro R$ {conta.lucro.toFixed(0)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </section>
+
+                            <div className="section" id="full-detail">
+                                <h2>📦 Vendas Full ({fullData.total})</h2>
+                            </div>
+                            <section className="infocard">
+                                <div className="full-summary">
+                                    <div className="full-chip ml">🟡 ML <b>{fullData.ml}</b></div>
+                                    <div className="full-chip sh">🟠 Shopee <b>{fullData.sh}</b></div>
+                                    <div className="full-chip mg">🔵 Magalu <b>{fullData.mg}</b></div>
+                                </div>
+                                <h4 style={{margin:'16px 0 10px',fontSize:'14px',color:'var(--soft)'}}>Por conta</h4>
+                                {fullData.contas.map((conta, i) => (
+                                    <div className="conta-row" key={i}>
+                                        <div className="conta-pos">{i + 1}</div>
+                                        <div className="conta-info">
+                                            <b>{conta.nome}</b>
+                                            <span>{conta.vendedor.trim()}</span>
+                                        </div>
+                                        <div className="conta-values">
+                                            <b>{conta.pedidos} ped.</b>
+                                            <span>R$ {conta.faturamento.toFixed(0)}</span>
                                         </div>
                                     </div>
                                 ))}

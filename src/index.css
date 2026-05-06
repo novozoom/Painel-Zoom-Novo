@@ -577,3 +577,28 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
 }
 .conta-values b{font-size:14px;font-weight:900}
 .conta-values span{font-size:11px;font-weight:700}
+
+/* Full summary chips */
+.full-summary{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.full-chip{
+  flex:1;
+  min-width:80px;
+  padding:12px 10px;
+  border-radius:16px;
+  background:rgba(0,0,0,.2);
+  border:1px solid rgba(255,255,255,.1);
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+}
+.full-chip b{display:block;font-size:22px;margin-top:5px;font-weight:980}
+.full-chip.ml{border-color:rgba(255,230,0,.25);background:rgba(255,230,0,.06)}
+.full-chip.ml b{color:#ffe600}
+.full-chip.sh{border-color:rgba(255,90,0,.25);background:rgba(255,90,0,.06)}
+.full-chip.sh b{color:#ff5a00}
+.full-chip.mg{border-color:rgba(29,123,255,.25);background:rgba(29,123,255,.06)}
+.full-chip.mg b{color:#1d7bff}
