@@ -486,6 +486,23 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
 .tags .tag.cat{background:linear-gradient(135deg,#ff9d22,#ff3d73);color:#fff;border:none}
 .tags .tag.full{background:#25f56a;color:#000;border:none;box-shadow:0 0 12px rgba(37,245,106,.3)}
 
+/* Marketplace neon borders */
+.borda-ml{border-left:3px solid #ffe600!important;box-shadow:inset 3px 0 12px rgba(255,230,0,.10),0 0 0 transparent}
+.borda-sh{border-left:3px solid #ff5a00!important;box-shadow:inset 3px 0 12px rgba(255,90,0,.10),0 0 0 transparent}
+.borda-mg{border-left:3px solid #1d7bff!important;box-shadow:inset 3px 0 12px rgba(29,123,255,.10),0 0 0 transparent}
+.borda-tk{border-left:3px solid #ff2d55!important;box-shadow:inset 3px 0 12px rgba(255,45,85,.10),0 0 0 transparent}
+.borda-other{border-left:3px solid var(--purple)!important;box-shadow:inset 3px 0 12px rgba(161,98,255,.10),0 0 0 transparent}
+
+/* Pedido total value */
+.pedido-total{
+  display:block!important;
+  font-size:14px!important;
+  font-weight:900;
+  color:var(--text)!important;
+  margin-bottom:2px!important;
+  margin-top:0!important;
+}
+
 /* Rank product photo - LARGE centered */
 .rank-photo-center{
   width:120px;height:120px;margin:0 auto 12px;border-radius:22px;

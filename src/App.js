@@ -629,8 +629,10 @@ function Resultados() {
                             
                             <div className="orders-list">
                                 {dadosProcessados.map((item, index) => {
+                                    const v = (item.vendedor || '').trim();
+                                    const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
                                     return (
-                                        <article className="product-row" key={index}>
+                                        <article className={`product-row ${borderClass}`} key={index}>
                                             <div className="product-photo">
                                                 {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
                                                     <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="produto" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
@@ -648,6 +650,7 @@ function Resultados() {
                                                 <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)}</p>
                                             </div>
                                             <div className="product-profit">
+                                                <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
                                                 <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
                                                 <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
                                             </div>
