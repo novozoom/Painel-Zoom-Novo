@@ -22,9 +22,13 @@ def sync_aton():
         data_inicio = datetime.datetime.now().date()
         data_fim = datetime.datetime.now().date()
         
-    from sync_supabase import sincronizar_pedidos
-    resultado = sincronizar_pedidos(data_inicio, data_fim)
-    return jsonify(resultado)
+    try:
+        from sync_supabase import sincronizar_pedidos
+        resultado = sincronizar_pedidos(data_inicio, data_fim)
+        return jsonify(resultado)
+    except Exception as e:
+        import traceback
+        return jsonify({"status": "error", "message": str(e), "traceback": traceback.format_exc()}), 500
 
 @bp.route('/api/resultados')
 def obter_resultados():
