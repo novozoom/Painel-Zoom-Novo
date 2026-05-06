@@ -305,13 +305,24 @@ function Resultados() {
             ) : (
                 <>
                     <header className="top">
-                        <button className="iconbtn">☰</button>
+                        <button className="iconbtn" onClick={() => {
+                            const menu = document.getElementById('nav-menu');
+                            if(menu) menu.classList.toggle('open');
+                        }}>☰</button>
                         <div className="title">
                             <h1>Platinum OS</h1>
                             <p className="live">vendas, lucro e margem ao vivo</p>
                         </div>
-                        <button className="iconbtn" onClick={syncEBuscar}>↻</button>
+                        <button className="iconbtn" onClick={() => { syncEBuscar(); }}>↻</button>
                     </header>
+                    <nav id="nav-menu" className="nav-menu">
+                        <button onClick={() => { document.getElementById('nav-menu').classList.remove('open'); window.scrollTo({top:0,behavior:'smooth'}); }}>🏠 Início</button>
+                        <button onClick={() => { document.getElementById('nav-menu').classList.remove('open'); const el = document.getElementById('mais-margem'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>💎 Ranking</button>
+                        <button onClick={() => { document.getElementById('nav-menu').classList.remove('open'); const el = document.getElementById('prejuizo-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>⚠️ Prejuízos</button>
+                        <button onClick={() => { document.getElementById('nav-menu').classList.remove('open'); const el = document.getElementById('contas-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>🛒 Contas</button>
+                        <button onClick={() => { document.getElementById('nav-menu').classList.remove('open'); const el = document.getElementById('full-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>📦 Vendas Full</button>
+                        <button onClick={() => { document.getElementById('nav-menu').classList.remove('open'); setAbaPrincipal('pedidos'); setTimeout(() => window.scrollTo({top:0,behavior:'smooth'}),100); }}>📋 Ver Pedidos</button>
+                    </nav>
 
                     <nav className="segment">
                         <button className={filtroAtivo === 'Hoje' ? 'active' : ''} onClick={() => setDateRange('Hoje')}>Hoje</button>
