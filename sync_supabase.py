@@ -136,6 +136,7 @@ ORDER BY
             "custo_adicional": float(dicionario_resultado.get("CUSTO_ADICIONAL") or 0),
             "custo_frete": float(dicionario_resultado.get("CUSTO_FRETE") or 0),
             "vlr_custo": float(dicionario_resultado.get("VLR_CUSTO") or 0),
+            "titulo": str(dicionario_resultado.get("TITULO") or ""),
             "catalogo": str(dicionario_resultado.get("CATALOGO", "")),
             "full_status": str(dicionario_resultado.get("FULL", "")),
             "url_imagem": str(dicionario_resultado.get("URL", "")),
