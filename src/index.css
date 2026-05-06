@@ -485,3 +485,95 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
 .tags .tag.pid{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
 .tags .tag.cat{background:linear-gradient(135deg,#ff9d22,#ff3d73);color:#fff;border:none}
 .tags .tag.full{background:#25f56a;color:#000;border:none;box-shadow:0 0 12px rgba(37,245,106,.3)}
+
+/* Rank product photo */
+.rank-photo{
+  width:54px;height:54px;min-width:54px;border-radius:16px;
+  background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.96),rgba(235,237,240,.84) 45%,rgba(150,155,165,.30) 100%);
+  display:grid;place-items:center;font-size:26px;overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 8px 18px rgba(0,0,0,.18);
+}
+.rank-photo img{width:100%;height:100%;object-fit:contain}
+.rank-canal{color:var(--cyan)!important;font-size:10px!important;font-weight:700}
+
+/* Cost breakdown grid */
+.metrics.breakdown{
+  grid-template-columns:repeat(2,1fr);
+  gap:6px;
+}
+.metrics.breakdown div{
+  padding:7px 8px;
+}
+.lucro-final{
+  grid-column:1/-1;
+  background:rgba(60,255,154,.08)!important;
+  border:1px solid rgba(60,255,154,.20)!important;
+  border-radius:14px;
+}
+.red{color:var(--red)!important}
+
+/* Load more button */
+.load-more{
+  width:100%;
+  padding:14px;
+  border:1px dashed rgba(255,255,255,.18);
+  background:rgba(255,255,255,.04);
+  border-radius:18px;
+  font-weight:900;
+  font-size:13px;
+  color:var(--cyan);
+  margin-top:4px;
+  transition:all .2s;
+}
+.load-more:hover{
+  background:rgba(21,216,255,.08);
+  border-color:rgba(21,216,255,.35);
+}
+
+/* Prejuízo row highlight */
+.prejuizo-row{
+  border-color:rgba(255,69,111,.28)!important;
+  background:rgba(255,69,111,.06)!important;
+}
+
+/* Breakdown mini (inline cost details) */
+.breakdown-mini{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 10px;
+  margin-top:2px;
+}
+.breakdown-mini span{
+  font-size:10px;
+  color:#b8bbc4;
+  font-weight:700;
+}
+
+/* Conta (marketplace account) rows */
+.conta-row{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.conta-row:last-child{border-bottom:none}
+.conta-pos{
+  width:30px;height:30px;min-width:30px;border-radius:10px;
+  display:grid;place-items:center;
+  font-weight:980;font-size:12px;
+  color:#1b130d;
+  background:linear-gradient(135deg,#fff0d9,var(--orange));
+}
+.conta-info{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;gap:3px;
+}
+.conta-info b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conta-info span{font-size:11px;color:var(--soft)}
+.conta-values{
+  text-align:right;
+  display:flex;flex-direction:column;gap:3px;
+}
+.conta-values b{font-size:14px;font-weight:900}
+.conta-values span{font-size:11px;font-weight:700}

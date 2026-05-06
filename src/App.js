@@ -15,6 +15,7 @@ function Resultados() {
     const [abaPrincipal, setAbaPrincipal] = useState('home'); // home, pedidos
     const [filtroAtivo, setFiltroAtivo] = useState('Hoje');
     const [abaRanking, setAbaRanking] = useState('produtos');
+    const [rankLimit, setRankLimit] = useState(10);
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -217,8 +218,9 @@ function Resultados() {
                     nome: item.titulo, 
                     sku: val, 
                     origem: item.origem_nome + ' ' + item.vendedor, 
+                    url_imagem: item.url_imagem,
                     faturamento: 0, lucro: 0, unidades: 0, pedidos: 0,
-                    custoProduto: 0
+                    custoProduto: 0, taxaFixa: 0, tarifaDeVenda: 0, frete: 0
                 };
             }
             mapa[val].faturamento += item.valorDeVenda;
@@ -226,6 +228,9 @@ function Resultados() {
             mapa[val].unidades += item.quant_itens;
             mapa[val].pedidos += 1;
             mapa[val].custoProduto += item.custoProduto;
+            mapa[val].taxaFixa += item.taxaFixa;
+            mapa[val].tarifaDeVenda += item.tarifaDeVenda;
+            mapa[val].frete += item.frete;
         });
         return Object.values(mapa).map(p => ({
             ...p, 
@@ -234,6 +239,8 @@ function Resultados() {
     }, [dadosProcessados]);
 
     const prejuizos = useMemo(() => dadosProcessados.filter(d => d.lucro <= 0).sort((a,b) => a.lucro - b.lucro), [dadosProcessados]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const contasAgrupadas = useMemo(() => agruparPor('origem_nome').sort((a,b) => b.faturamento - a.faturamento), [dadosProcessados]);
 
     const marcaTop = marcasAgrupadas.length > 0 ? marcasAgrupadas.sort((a,b) => b.faturamento - a.faturamento)[0] : null;
     const produtoMargemTop = produtosAgrupados.length > 0 ? produtosAgrupados[0] : null;
@@ -335,7 +342,7 @@ function Resultados() {
                                     <p>R$ {marcaTop ? marcaTop.faturamento.toFixed(0) : 0} · {marcaTop ? marcaTop.unidades : 0} unid.</p>
                                 </article>
 
-                                <article className="tile purple">
+                                <article className="tile purple" onClick={() => { const el = document.getElementById('contas-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>
                                     <span className="badge">contas</span>
                                     <span className="ico">🛒</span>
                                     <h3>Marketplaces</h3>
@@ -351,7 +358,7 @@ function Resultados() {
                                     <p>produto campeão</p>
                                 </article>
 
-                                <article className="tile red">
+                                <article className="tile red" onClick={() => { const el = document.getElementById('prejuizo-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>
                                     <span className="badge">urgente</span>
                                     <span className="ico">⚠️</span>
                                     <h3>Pedidos com prejuízo</h3>
@@ -384,23 +391,39 @@ function Resultados() {
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
-                                    {produtosAgrupados.slice(0, 10).map((prod, i) => (
+                                    {produtosAgrupados.slice(0, rankLimit).map((prod, i) => (
                                         <article className="rank" key={i}>
                                             <div className="rank-top">
+                                                <div className="rank-photo">
+                                                    {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
+                                                        <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} alt="" loading="lazy" />
+                                                    ) : <span>📦</span>}
+                                                </div>
                                                 <div className="medal">{i + 1}</div>
                                                 <div className="rname">
                                                     <h3>{prod.nome || 'Produto Desconhecido'}</h3>
-                                                    <p>SKU {prod.sku} • {prod.origem}</p>
+                                                    <p>SKU {prod.sku}</p>
+                                                    <p className="rank-canal">{prod.origem.trim()}</p>
                                                 </div>
                                                 <div className="rmargin">{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
                                             </div>
+                                            <div className="metrics breakdown">
+                                                <div><span>💰 Venda</span><b>R$ {prod.faturamento.toFixed(2)}</b></div>
+                                                <div><span>📦 Custo</span><b style={{color:'#ff6b6b'}}>-R$ {prod.custoProduto.toFixed(2)}</b></div>
+                                                <div><span>🏷️ Taxa</span><b style={{color:'#ff6b6b'}}>-R$ {prod.taxaFixa.toFixed(2)}</b></div>
+                                                <div><span>📊 Comissão</span><b style={{color:'#ff6b6b'}}>-R$ {prod.tarifaDeVenda.toFixed(2)}</b></div>
+                                                <div><span>🚚 Frete</span><b style={{color:'#ff6b6b'}}>-R$ {prod.frete.toFixed(2)}</b></div>
+                                                <div className="lucro-final"><span>✅ Lucro</span><b className={prod.lucro > 0 ? 'green' : 'red'}>R$ {prod.lucro.toFixed(2)}</b></div>
+                                            </div>
                                             <div className="metrics">
-                                                <div><span>Venda</span><b>R$ {(prod.faturamento/prod.unidades || 0).toFixed(2)}</b></div>
-                                                <div><span>Lucro</span><b className="green">R$ {prod.lucro.toFixed(2)}</b></div>
                                                 <div><span>Qtd</span><b>{prod.unidades} un.</b></div>
+                                                <div><span>Pedidos</span><b>{prod.pedidos}</b></div>
                                             </div>
                                         </article>
                                     ))}
+                                    {rankLimit < produtosAgrupados.length && (
+                                        <button className="load-more" onClick={() => setRankLimit(prev => prev + 15)}>Carregar mais ({produtosAgrupados.length - rankLimit} restantes)</button>
+                                    )}
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'marcas' ? 'active' : ''}`}>
@@ -469,6 +492,64 @@ function Resultados() {
                                     <div className="track"><i className="outrosbar" style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`}}></i></div>
                                     <span>{outrosPedidos}</span>
                                 </div>
+                            </section>
+
+                            {prejuizos.length > 0 && (
+                                <>
+                                    <div className="section" id="prejuizo-detail">
+                                        <h2>⚠️ Pedidos com Prejuízo ({prejuizos.length})</h2>
+                                    </div>
+                                    <section className="infocard">
+                                        <div className="orders-list">
+                                            {prejuizos.map((item, index) => (
+                                                <article className="product-row prejuizo-row" key={index}>
+                                                    <div className="product-photo">
+                                                        {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                            <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                        ) : '📦'}
+                                                    </div>
+                                                    <div className="product-info">
+                                                        <h3>{item.titulo || 'Produto não identificado'}</h3>
+                                                        <div className="tags">
+                                                            <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                            <span className="tag pid">ID: {item.pedido_id}</span>
+                                                        </div>
+                                                        <div className="breakdown-mini">
+                                                            <span>Venda R$ {item.valorDeVenda.toFixed(2)}</span>
+                                                            <span>Custo R$ {item.custoProduto.toFixed(2)}</span>
+                                                            <span>Taxa R$ {item.taxaFixa.toFixed(2)}</span>
+                                                            <span>Comissão R$ {item.tarifaDeVenda.toFixed(2)}</span>
+                                                            <span>Frete R$ {item.frete.toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="product-profit">
+                                                        <b style={{color: 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                        <span style={{color: 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                    </div>
+                                                </article>
+                                            ))}
+                                        </div>
+                                    </section>
+                                </>
+                            )}
+
+                            <div className="section" id="contas-detail">
+                                <h2>🛒 Vendas por Conta ({contasAgrupadas.length})</h2>
+                            </div>
+                            <section className="infocard">
+                                {contasAgrupadas.map((conta, i) => (
+                                    <div className="conta-row" key={i}>
+                                        <div className="conta-pos">{i + 1}</div>
+                                        <div className="conta-info">
+                                            <b>{conta.nome ? conta.nome.trim() : 'Outros'}</b>
+                                            <span>{conta.pedidos} pedidos · {conta.unidades} un.</span>
+                                        </div>
+                                        <div className="conta-values">
+                                            <b>R$ {conta.faturamento.toFixed(0)}</b>
+                                            <span className={conta.lucro > 0 ? 'green' : 'red'}>Lucro R$ {conta.lucro.toFixed(0)}</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </section>
                         </div>
                     )}
