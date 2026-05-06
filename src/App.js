@@ -717,16 +717,58 @@ function Resultados() {
                             </div>
                         </div>
                     )}
+
+                    {abaPrincipal === 'full' && (
+                        <div className="page-content pedidos-view">
+                            <div className="section" style={{marginTop:'0'}}>
+                                <h2>📦 Vendas Full ({fullData.total} pedidos)</h2>
+                            </div>
+                            <div className="full-summary" style={{marginBottom:'14px'}}>
+                                <div className="full-chip ml">🟡 ML <b>{fullData.ml}</b></div>
+                                <div className="full-chip sh">🟠 Shopee <b>{fullData.sh}</b></div>
+                                <div className="full-chip mg">🔵 Magalu <b>{fullData.mg}</b></div>
+                            </div>
+                            <div className="orders-list">
+                                {fullData.items.map((item, index) => {
+                                    const v = (item.vendedor || '').trim();
+                                    const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                    return (
+                                        <article className={`product-row ${borderClass}`} key={index}>
+                                            <div className="product-photo">
+                                                {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                    <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                ) : '📦'}
+                                            </div>
+                                            <div className="product-info">
+                                                <h3>{item.titulo || 'Produto'}</h3>
+                                                <div className="tags">
+                                                    <span className="tag quant">{item.quant_itens} UND.</span>
+                                                    <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                    <span className="tag full">⚡ FULL</span>
+                                                    <span className="tag pid">ID: {item.pedido_id}</span>
+                                                </div>
+                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)}</p>
+                                            </div>
+                                            <div className="product-profit">
+                                                <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
+                                                <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 
             <div className="bottom">
-                <nav className="nav">
-                    <div className={abaPrincipal === 'home' ? 'active' : ''} onClick={() => setAbaPrincipal('home')}><b>⌂</b>Home</div>
-                    <div className={abaPrincipal === 'pedidos' ? 'active' : ''} onClick={() => setAbaPrincipal('pedidos')}><b>▣</b>Pedidos</div>
-                    <div><span className="plus">+</span></div>
-                    <div><b>◇</b>Margem</div>
-                    <div><b>•••</b>Mais</div>
+                <nav className="nav nav-4">
+                    <div className={abaPrincipal === 'home' ? 'active' : ''} onClick={() => { setAbaPrincipal('home'); syncEBuscar(); window.scrollTo({top:0,behavior:'smooth'}); }}><b>🏠</b>Home</div>
+                    <div className={abaPrincipal === 'pedidos' ? 'active' : ''} onClick={() => { setAbaPrincipal('pedidos'); window.scrollTo({top:0,behavior:'smooth'}); }}><b>📋</b>Pedidos</div>
+                    <div className={abaPrincipal === 'full' ? 'active' : ''} onClick={() => { setAbaPrincipal('full'); window.scrollTo({top:0,behavior:'smooth'}); }}><b>📦</b>Full</div>
+                    <div onClick={() => {}}><b>📊</b>Estoque</div>
                 </nav>
             </div>
         </main>

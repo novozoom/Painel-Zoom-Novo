@@ -423,7 +423,7 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
   background:rgba(35,38,46,.72);
   backdrop-filter:blur(22px);
   display:grid;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:repeat(4,1fr);
   align-items:center;
   text-align:center;
   box-shadow:0 20px 44px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.10);
@@ -441,17 +441,6 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
   color:#fff;
 }
 .nav .active{color:#fff}
-.plus{
-  width:62px;height:62px;
-  margin:-24px auto 0;
-  border-radius:50%;
-  display:grid!important;
-  place-items:center;
-  color:#17130f!important;
-  font-size:39px!important;
-  background:linear-gradient(135deg,#fff1d9,var(--orange2),var(--orange));
-  box-shadow:0 0 38px rgba(255,106,26,.42);
-}
 @media(max-width:370px){
   .hero h2{font-size:39px}
   .metrics{grid-template-columns:1fr}
