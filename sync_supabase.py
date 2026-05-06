@@ -110,6 +110,7 @@ ORDER BY
 
     # Mapeando os resultados para o formato Supabase
     registros = []
+    chaves_vistas = set()
     for row in rows:
         dicionario_resultado = {}
         for idx, col in enumerate(cursor.description):
@@ -142,7 +143,11 @@ ORDER BY
             "marca": str(dicionario_resultado.get("MARCA") or "Diversos"),
             "grupo": str(dicionario_resultado.get("GRUPO") or "Diversos")
         }
-        registros.append(registro)
+        
+        chave_unica = f"{registro['pedido_id']}_{registro['sku']}"
+        if chave_unica not in chaves_vistas:
+            chaves_vistas.add(chave_unica)
+            registros.append(registro)
 
     cursor.close()
     conn.close()
