@@ -1014,42 +1014,52 @@ function Resultados() {
                     {abaPrincipal === 'pedidos' && (
                         <div className="page-content pedidos-view">
                             <div className="section" style={{marginTop:'0'}}>
-                                <h2>{filtroRank && filtroRank.tipo === 'margem' ? `Pedidos: ${filtroRank.titulo}` : `Todos os ${dadosProcessados.length} pedidos`}</h2>
+                                <h2>{filtroRank && filtroRank.tipo === 'margem' ? `Pedidos: ${filtroRank.titulo}` : filtroRank && filtroRank.tipo === 'carrinho' ? `🛒 Pedidos Carrinho (${filtroRank.titulo})` : `Todos os ${dadosProcessados.length} pedidos`}</h2>
                             </div>
 
-                            <div className="margin-cards" style={{marginTop: '0px', marginBottom: '16px'}}>
-                                <div className={`margin-card mc-red ${filtroRank?.valor === 'vermelho' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'vermelho' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Prejuízo (< 0%)'})}>
-                                    <h4>Prejuízo</h4>
-                                    <p className="mc-val">{margensResumo.vermelho}</p>
-                                    <p className="mc-label" style={{color: 'var(--red)'}}>&lt; 0%</p>
-                                </div>
-                                <div className={`margin-card mc-orange ${filtroRank?.valor === 'laranja' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'laranja' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Atenção (0 a 10%)'})}>
-                                    <h4>Atenção</h4>
-                                    <p className="mc-val">{margensResumo.laranja}</p>
-                                    <p className="mc-label" style={{color: 'var(--orange)'}}>0% a 9.99%</p>
-                                </div>
-                                <div className={`margin-card mc-yellow ${filtroRank?.valor === 'amarelo' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'amarelo' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Aceitável (10 a 20%)'})}>
-                                    <h4>Aceitável</h4>
-                                    <p className="mc-val">{margensResumo.amarelo}</p>
-                                    <p className="mc-label" style={{color: 'var(--yellow)'}}>10% a 19.99%</p>
-                                </div>
-                                <div className={`margin-card mc-green ${filtroRank?.valor === 'verde' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'verde' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Saudável (>= 20%)'})}>
-                                    <h4>Saudável</h4>
-                                    <p className="mc-val">{margensResumo.verde}</p>
-                                    <p className="mc-label" style={{color: 'var(--green)'}}>&gt;= 20%</p>
+                            <div className="margin-cards-sticky">
+                                <div className="margin-cards">
+                                    <div className={`margin-card mc-red ${filtroRank?.valor === 'vermelho' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'vermelho' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Prejuízo (< 0%)'})}>
+                                        <h4>Prejuízo</h4>
+                                        <p className="mc-val">{margensResumo.vermelho}</p>
+                                        <p className="mc-label" style={{color: 'var(--red)'}}>&lt; 0%</p>
+                                    </div>
+                                    <div className={`margin-card mc-orange ${filtroRank?.valor === 'laranja' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'laranja' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Atenção (0 a 10%)'})}>
+                                        <h4>Atenção</h4>
+                                        <p className="mc-val">{margensResumo.laranja}</p>
+                                        <p className="mc-label" style={{color: 'var(--orange)'}}>0-10%</p>
+                                    </div>
+                                    <div className={`margin-card mc-yellow ${filtroRank?.valor === 'amarelo' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'amarelo' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Aceitável (10 a 20%)'})}>
+                                        <h4>Aceitável</h4>
+                                        <p className="mc-val">{margensResumo.amarelo}</p>
+                                        <p className="mc-label" style={{color: 'var(--yellow)'}}>10-20%</p>
+                                    </div>
+                                    <div className={`margin-card mc-green ${filtroRank?.valor === 'verde' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'verde' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Saudável (>= 20%)'})}>
+                                        <h4>Saudável</h4>
+                                        <p className="mc-val">{margensResumo.verde}</p>
+                                        <p className="mc-label" style={{color: 'var(--green)'}}>&gt;20%</p>
+                                    </div>
+                                    <div className={`margin-card mc-purple ${filtroRank?.tipo === 'carrinho' ? 'active' : ''}`} onClick={() => filtroRank?.tipo === 'carrinho' ? setFiltroRank(null) : setFiltroRank({tipo: 'carrinho', valor: 'carrinho', titulo: `${(() => { const cs = new Set(); dadosProcessados.forEach(d => { const pedidoCounts = {}; dadosProcessados.forEach(dd => { pedidoCounts[dd.pedido_id] = (pedidoCounts[dd.pedido_id] || 0) + 1; }); if(pedidoCounts[d.pedido_id] > 1) cs.add(d.pedido_id); }); return cs.size; })()} pedidos`})}>
+                                        <h4>🛒 Carrinho</h4>
+                                        <p className="mc-val">{(() => { const pedidoCounts = {}; dadosProcessados.forEach(d => { pedidoCounts[d.pedido_id] = (pedidoCounts[d.pedido_id] || 0) + 1; }); return Object.values(pedidoCounts).filter(c => c > 1).length; })()}</p>
+                                        <p className="mc-label" style={{color: '#a855f7'}}>+1 item</p>
+                                    </div>
                                 </div>
                             </div>
                             
                             <div className="orders-list">
                                 {(() => {
-                                    const pedidosAExibir = filtroRank && filtroRank.tipo === 'margem' 
-                                        ? dadosProcessados.filter(item => getMarginLevel(item.margemLucro) === filtroRank.valor)
-                                        : dadosProcessados;
-
                                     const pedidoCounts = {};
-                                    pedidosAExibir.forEach(d => {
+                                    dadosProcessados.forEach(d => {
                                         pedidoCounts[d.pedido_id] = (pedidoCounts[d.pedido_id] || 0) + 1;
                                     });
+
+                                    let pedidosAExibir = dadosProcessados;
+                                    if (filtroRank && filtroRank.tipo === 'margem') {
+                                        pedidosAExibir = dadosProcessados.filter(item => getMarginLevel(item.margemLucro) === filtroRank.valor);
+                                    } else if (filtroRank && filtroRank.tipo === 'carrinho') {
+                                        pedidosAExibir = dadosProcessados.filter(item => pedidoCounts[item.pedido_id] > 1);
+                                    }
 
                                     return pedidosAExibir.map((item, index) => {
                                         const v = (item.vendedor || '').trim();
