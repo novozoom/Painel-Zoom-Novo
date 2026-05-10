@@ -4,6 +4,22 @@ import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
 import { format } from "date-fns";
 
+const getMarginColor = (margin) => {
+    if (!isFinite(margin)) return '#8b8e96';
+    if (margin < 0) return 'var(--red)';
+    if (margin < 10) return 'var(--orange)';
+    if (margin < 20) return 'var(--yellow)';
+    return 'var(--green)';
+};
+
+const getMarginLevel = (margin) => {
+    if (!isFinite(margin)) return 'N/A';
+    if (margin < 0) return 'Vermelho';
+    if (margin < 10) return 'Laranja';
+    if (margin < 20) return 'Amarelo';
+    return 'Verde';
+};
+
 function Resultados() {
     const [dados, inserirDados] = useState([]);
     const [numeroDePedidosUnicos, setNumeroDePedidosUnicos] = useState(0);
