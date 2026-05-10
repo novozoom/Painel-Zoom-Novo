@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+
 import React, {useEffect, useState, useMemo} from 'react';
 import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
@@ -131,28 +131,36 @@ function Resultados() {
 
     // Sincronizar e buscar dados
     const exportToXLSX = (pedidos) => {
-        const data = pedidos.map(item => ({
-            "Data": item.data_venda,
-            "Pedido ID": item.pedido_id,
-            "Conta": item.origem_nome || item.vendedor,
-            "SKU / Ref": item.sku,
-            "Cód Interno": item.cod_interno,
-            "Título": item.titulo,
-            "Itens": item.quant_itens,
-            "Venda (R$)": parseFloat(item.valorDeVenda.toFixed(2)),
-            "Custo (R$)": parseFloat(item.custoProduto.toFixed(2)),
-            "Frete (R$)": parseFloat(item.frete.toFixed(2)),
-            "Comissão (R$)": parseFloat(item.tarifaDeVenda.toFixed(2)),
-            "Taxa Fixa (R$)": parseFloat(item.taxaFixa.toFixed(2)),
-            "Imposto (R$)": parseFloat(item.descImposto.toFixed(2)),
-            "Operacional (R$)": parseFloat(item.descOperacional.toFixed(2)),
-            "Lucro (R$)": parseFloat(item.lucro.toFixed(2)),
-            "Margem (%)": isFinite(item.margemLucro) ? parseFloat(item.margemLucro.toFixed(2)) : 0
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Pedidos");
-        XLSX.writeFile(workbook, `Relatorio_Margens_${new Date().getTime()}.xlsx`);
+        const header = ["Data", "Pedido ID", "Conta", "SKU / Ref", "Cód Interno", "Título", "Itens", "Venda (R$)", "Custo (R$)", "Frete (R$)", "Comissão (R$)", "Taxa Fixa (R$)", "Imposto (R$)", "Operacional (R$)", "Lucro (R$)", "Margem (%)"];
+        
+        const rows = pedidos.map(item => [
+            item.data_venda || '',
+            item.pedido_id || '',
+            item.origem_nome || item.vendedor || '',
+            item.sku || '',
+            item.cod_interno || '',
+            `"${(item.titulo || '').replace(/"/g, '""')}"`,
+            item.quant_itens || 0,
+            (item.valorDeVenda || 0).toFixed(2).replace('.', ','),
+            (item.custoProduto || 0).toFixed(2).replace('.', ','),
+            (item.frete || 0).toFixed(2).replace('.', ','),
+            (item.tarifaDeVenda || 0).toFixed(2).replace('.', ','),
+            (item.taxaFixa || 0).toFixed(2).replace('.', ','),
+            (item.descImposto || 0).toFixed(2).replace('.', ','),
+            (item.descOperacional || 0).toFixed(2).replace('.', ','),
+            (item.lucro || 0).toFixed(2).replace('.', ','),
+            (isFinite(item.margemLucro) ? item.margemLucro : 0).toFixed(2).replace('.', ',')
+        ]);
+        
+        const csvContent = "\uFEFF" + [header.join(';')].concat(rows.map(r => r.join(';'))).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Relatorio_Margens_${new Date().getTime()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const syncEBuscar = async () => {
@@ -654,7 +662,7 @@ function Resultados() {
                                                 </div>
                                                 <div style={{display: 'flex', gap: '8px'}}>
                                                     {filtroRank.tipo === 'margem' && (
-                                                        <button onClick={() => exportToXLSX(pedidosFiltrados)} style={{background: 'rgba(21,216,255,0.1)', color: 'var(--cyan)', border: '1px solid var(--cyan)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'}}>📥 Baixar XLSX</button>
+                                                        <button onClick={() => exportToXLSX(pedidosFiltrados)} style={{background: 'rgba(21,216,255,0.1)', color: 'var(--cyan)', border: '1px solid var(--cyan)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'}}>📥 Baixar Excel (CSV)</button>
                                                     )}
                                                     <button onClick={() => setFiltroRank(null)} style={{background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'}}>✕ Fechar</button>
                                                 </div>
@@ -1208,5 +1216,6 @@ function Resultados() {
 }
 
 export default Resultados;
+
 
 
