@@ -453,29 +453,6 @@ function Resultados() {
                                     <div className="mini"><span>Ticket</span><b>R$ {numeroDePedidosUnicos > 0 ? (faturamentoDeHoje / numeroDePedidosUnicos).toFixed(0) : 0}</b></div>
                                 </div>
 
-                                <div className="margin-cards" style={{marginTop: '20px'}}>
-                                    <div className="margin-card mc-red" onClick={() => setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Pedidos em Prejuízo (< 0%)'})}>
-                                        <h4>Prejuízo</h4>
-                                        <p className="mc-val">{margensResumo.vermelho}</p>
-                                        <p className="mc-label" style={{color: 'var(--red)'}}>&lt; 0%</p>
-                                    </div>
-                                    <div className="margin-card mc-orange" onClick={() => setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Alerta de Margem (0 a 10%)'})}>
-                                        <h4>Atenção</h4>
-                                        <p className="mc-val">{margensResumo.laranja}</p>
-                                        <p className="mc-label" style={{color: 'var(--orange)'}}>0% a 9.99%</p>
-                                    </div>
-                                    <div className="margin-card mc-yellow" onClick={() => setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Margem Aceitável (10 a 20%)'})}>
-                                        <h4>Aceitável</h4>
-                                        <p className="mc-val">{margensResumo.amarelo}</p>
-                                        <p className="mc-label" style={{color: 'var(--yellow)'}}>10% a 19.99%</p>
-                                    </div>
-                                    <div className="margin-card mc-green" onClick={() => setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Margem Saudável (>= 20%)'})}>
-                                        <h4>Saudável</h4>
-                                        <p className="mc-val">{margensResumo.verde}</p>
-                                        <p className="mc-label" style={{color: 'var(--green)'}}>&gt;= 20%</p>
-                                    </div>
-                                </div>
-
                                 <div style={{textAlign: 'center', marginTop: '10px'}}>
                                     <button onClick={() => setMostrarConfig(!mostrarConfig)} style={{background: 'transparent', border: 'none', color: 'var(--soft)', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', margin: '0 auto'}}>
                                         ⚙️ Configurar Custos {mostrarConfig ? '▲' : '▼'}
@@ -1039,6 +1016,29 @@ function Resultados() {
                             <div className="section" style={{marginTop:'0'}}>
                                 <h2>Todos os {dadosProcessados.length} pedidos</h2>
                             </div>
+
+                            <div className="margin-cards" style={{marginTop: '0px', marginBottom: '16px'}}>
+                                <div className="margin-card mc-red" onClick={() => setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Pedidos em Prejuízo (< 0%)'})}>
+                                    <h4>Prejuízo</h4>
+                                    <p className="mc-val">{margensResumo.vermelho}</p>
+                                    <p className="mc-label" style={{color: 'var(--red)'}}>&lt; 0%</p>
+                                </div>
+                                <div className="margin-card mc-orange" onClick={() => setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Alerta de Margem (0 a 10%)'})}>
+                                    <h4>Atenção</h4>
+                                    <p className="mc-val">{margensResumo.laranja}</p>
+                                    <p className="mc-label" style={{color: 'var(--orange)'}}>0% a 9.99%</p>
+                                </div>
+                                <div className="margin-card mc-yellow" onClick={() => setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Margem Aceitável (10 a 20%)'})}>
+                                    <h4>Aceitável</h4>
+                                    <p className="mc-val">{margensResumo.amarelo}</p>
+                                    <p className="mc-label" style={{color: 'var(--yellow)'}}>10% a 19.99%</p>
+                                </div>
+                                <div className="margin-card mc-green" onClick={() => setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Margem Saudável (>= 20%)'})}>
+                                    <h4>Saudável</h4>
+                                    <p className="mc-val">{margensResumo.verde}</p>
+                                    <p className="mc-label" style={{color: 'var(--green)'}}>&gt;= 20%</p>
+                                </div>
+                            </div>
                             
                             <div className="orders-list">
                                 {(() => {
@@ -1075,7 +1075,7 @@ function Resultados() {
                                             <div className="product-profit">
                                                 <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
                                                 <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
-                                                <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                <span style={{color: getMarginColor(item.margemLucro), fontWeight: 'bold'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
                                             </div>
                                         </article>
                                     );
