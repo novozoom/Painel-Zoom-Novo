@@ -1061,10 +1061,16 @@ function Resultados() {
                                         pedidosAExibir = dadosProcessados.filter(item => pedidoCounts[item.pedido_id] > 1);
                                     }
 
-                                    return pedidosAExibir.map((item, index) => {
-                                        const v = (item.vendedor || '').trim();
-                                        const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
-                                        const ehCarrinho = pedidoCounts[item.pedido_id] > 1;
+                                    return (
+                                        <>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
+                                                <span style={{fontSize: '13px', color: 'var(--soft)'}}>{filtroRank ? `${pedidosAExibir.length} pedidos filtrados` : `${pedidosAExibir.length} pedidos`}</span>
+                                                <button onClick={() => exportToXLSX(pedidosAExibir)} style={{background: 'rgba(21,216,255,0.1)', color: 'var(--cyan)', border: '1px solid var(--cyan)', padding: '6px 14px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold'}}>📥 Exportar CSV</button>
+                                            </div>
+                                            {pedidosAExibir.map((item, index) => {
+                                                const v = (item.vendedor || '').trim();
+                                                const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                                const ehCarrinho = pedidoCounts[item.pedido_id] > 1;
 
                                         return (
                                             <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
@@ -1079,6 +1085,7 @@ function Resultados() {
                                                         <span className="tag quant">{item.quant_itens} UND.</span>
                                                         <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
                                                         <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
+                                                        {item.marca && item.marca !== 'Diversos' && <span className="tag" style={{background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)'}}>{item.marca}</span>}
                                                         {item.catalogo === 'S' && <span className="tag cat">⚡ CATÁLOGO</span>}
                                                         {item.full_status === 'TRUE' && <span className="tag full">⚡ FULL</span>}
                                                         {ehCarrinho && <span className="tag carrinho" style={{background: '#ff2d55', color: 'white'}}>🛒 CARRINHO</span>}
@@ -1093,7 +1100,9 @@ function Resultados() {
                                             </div>
                                         </article>
                                     );
-                                    });
+                                    })}
+                                        </>
+                                    );
                                 })()}
                             </div>
                         </div>
