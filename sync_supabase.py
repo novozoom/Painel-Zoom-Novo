@@ -47,7 +47,7 @@ SELECT
     PI.[VLR_FRETE],
     PI.[CODID],
     PI.[COD_PEDIDO],
-    PI.[COD_INTERNO],
+    M.[COD_INTERNO],
     COALESCE(SKU.[SKU], SKU.[SKUVARIACAO_MASTER]) AS [SKU], 
     SKU.[COMISSAO_SKU],
     SKU.[CUSTO_ADICIONAL],
@@ -76,9 +76,9 @@ JOIN
 JOIN
     [AmbarZoomBrinquedos].[dbo].[ECOM_ORIGEM] AS EO
     ON PM.[ORIGEM] = EO.[ORIGEM_ID] 
-JOIN
+LEFT JOIN
     [AmbarZoomBrinquedos].[dbo].[MATERIAIS] AS M
-    ON M.[COD_INTERNO] = PI.[COD_INTERNO]  
+    ON M.[CODID] = PI.[CODID]  
 LEFT JOIN 
     [AmbarZoomBrinquedos].[dbo].[FABRICANTE_MATERIAIS] AS F 
     ON M.[FABRICANTE] = F.[COD_FABRICANTE]
