@@ -7,13 +7,26 @@ function Resultados() {
     const [dados, inserirDados] = useState([]);
     const [numeroDePedidosUnicos, setNumeroDePedidosUnicos] = useState(0);
     const [dadosOntem, inserirDadosOntem] = useState(0);
+    const [pedidosOntem, setPedidosOntem] = useState(0);
     const [faturamentoDeHoje, setFaturamentoDeHoje] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
-    const [abaPrincipal, setAbaPrincipal] = useState('home'); // home, pedidos
+    const [abaPrincipal, setAbaPrincipal] = useState('home'); // home, pedidos, drilldown_grupos
+    const [drillLevel, setDrillLevel] = useState(1);
+    const [drillGrupo, setDrillGrupo] = useState('');
+    const [drillMarca, setDrillMarca] = useState('');
+    const [pedidoSelecionado, setPedidoSelecionado] = useState(null);
     const [filtroAtivo, setFiltroAtivo] = useState('Hoje');
+    const [imposto, setImposto] = useState(() => { const val = localStorage.getItem('cfg_imposto'); return val ? parseFloat(val) : 6; });
+    const [custoOperacional, setCustoOperacional] = useState(() => { const val = localStorage.getItem('cfg_custoOper'); return val ? parseFloat(val) : 6; });
+    const [mostrarConfig, setMostrarConfig] = useState(false);
+    
+    useEffect(() => {
+        localStorage.setItem('cfg_imposto', imposto);
+        localStorage.setItem('cfg_custoOper', custoOperacional);
+    }, [imposto, custoOperacional]);
     const [abaRanking, setAbaRanking] = useState('produtos');
     const [rankLimit, setRankLimit] = useState(10);
     const [ordenacao, setOrdenacao] = useState('pedidos');
@@ -82,8 +95,10 @@ function Resultados() {
         }
     }
 
-    function CalcularTotal(valor, taxaFixa, tarifa, custo, frete) {
-        return valor - taxaFixa - tarifa - custo - frete;
+    function CalcularTotal(valor, taxaFixa, tarifa, custo, frete, impostoPct, operPct) {
+        const descImp = valor * (impostoPct / 100);
+        const descOper = valor * (operPct / 100);
+        return valor - taxaFixa - tarifa - custo - frete - descImp - descOper;
     }
 
     function CalcularMargemLucro(total, custoProduto) {
@@ -105,6 +120,7 @@ function Resultados() {
                     }
                 });
                 inserirDadosOntem(somaTotal);
+                setPedidosOntem(pedidosUnicos.size);
             } catch (error) { console.error(error); }
         };
         buscarDadosOntem();
@@ -186,11 +202,13 @@ function Resultados() {
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
             const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, item.quant_itens);
             const valorDeVenda = item.total_pedido;
-            const lucro = CalcularTotal(valorDeVenda, taxaFixa, tarifaDeVenda, custoProduto, frete);
+            const descImposto = valorDeVenda * (imposto / 100);
+            const descOperacional = valorDeVenda * (custoOperacional / 100);
+            const lucro = CalcularTotal(valorDeVenda, taxaFixa, tarifaDeVenda, custoProduto, frete, imposto, custoOperacional);
             const margemLucro = CalcularMargemLucro(lucro, custoProduto);
-            return { ...item, titulo: tituloLimpo, cod_interno: codInterno, valorDeVenda, lucro, margemLucro, custoProduto, taxaFixa, tarifaDeVenda, frete };
+            return { ...item, titulo: tituloLimpo, cod_interno: codInterno, valorDeVenda, lucro, margemLucro, custoProduto, taxaFixa, tarifaDeVenda, frete, descImposto, descOperacional };
         });
-    }, [dados]);
+    }, [dados, imposto, custoOperacional]);
 
     const lucroLiquidoTotal = useMemo(() => {
         return dadosProcessados.reduce((acc, curr) => acc + curr.lucro, 0);
@@ -232,7 +250,8 @@ function Resultados() {
                     origem: item.origem_nome + ' ' + item.vendedor, 
                     url_imagem: item.url_imagem,
                     faturamento: 0, lucro: 0, unidades: 0, pedidos: 0,
-                    custoProduto: 0, taxaFixa: 0, tarifaDeVenda: 0, frete: 0
+                    custoProduto: 0, taxaFixa: 0, tarifaDeVenda: 0, frete: 0,
+                    descImposto: 0, descOperacional: 0
                 };
             }
             mapa[val].faturamento += item.valorDeVenda;
@@ -243,6 +262,8 @@ function Resultados() {
             mapa[val].taxaFixa += item.taxaFixa;
             mapa[val].tarifaDeVenda += item.tarifaDeVenda;
             mapa[val].frete += item.frete;
+            mapa[val].descImposto += item.descImposto;
+            mapa[val].descOperacional += item.descOperacional;
         });
         return Object.values(mapa).map(p => ({
             ...p, 
@@ -355,12 +376,34 @@ function Resultados() {
                                 <div className="sub">
                                     {desempenhoDia > 0 ? <span className="orange">↑ {desempenhoDia.toFixed(1)}% vs ontem</span> : <span className="green">↓ {Math.abs(desempenhoDia).toFixed(1)}% vs ontem</span>} · {numeroDePedidosUnicos} pedidos
                                 </div>
+                                <div style={{fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                    <span style={{display: 'inline-block', width: '4px', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%'}}></span>
+                                    Ontem fechou em R$ {dadosOntem.toFixed(0)} com {pedidosOntem} pedidos
+                                </div>
 
                                 <div className="hero-row">
                                     <div className="mini"><span>Lucro</span><b>R$ {lucroLiquidoTotal.toFixed(0)}</b></div>
                                     <div className="mini"><span>Margem</span><b className="green">{faturamentoDeHoje > 0 ? (lucroLiquidoTotal / faturamentoDeHoje * 100).toFixed(1) : 0}%</b></div>
                                     <div className="mini"><span>Ticket</span><b>R$ {numeroDePedidosUnicos > 0 ? (faturamentoDeHoje / numeroDePedidosUnicos).toFixed(0) : 0}</b></div>
                                 </div>
+
+                                <div style={{textAlign: 'center', marginTop: '10px'}}>
+                                    <button onClick={() => setMostrarConfig(!mostrarConfig)} style={{background: 'transparent', border: 'none', color: 'var(--soft)', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', margin: '0 auto'}}>
+                                        ⚙️ Configurar Custos {mostrarConfig ? '▲' : '▼'}
+                                    </button>
+                                </div>
+                                {mostrarConfig && (
+                                    <div style={{background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '12px', marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center'}}>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                            <label style={{fontSize: '11px', color: 'var(--soft)'}}>Imposto (%)</label>
+                                            <input type="number" step="0.1" value={imposto} onChange={e => setImposto(parseFloat(e.target.value) || 0)} style={{width: '60px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '6px', padding: '4px', textAlign: 'center'}} />
+                                        </div>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                                            <label style={{fontSize: '11px', color: 'var(--soft)'}}>Operacional (%)</label>
+                                            <input type="number" step="0.1" value={custoOperacional} onChange={e => setCustoOperacional(parseFloat(e.target.value) || 0)} style={{width: '60px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '6px', padding: '4px', textAlign: 'center'}} />
+                                        </div>
+                                    </div>
+                                )}
 
                                 <svg className="spark" viewBox="0 0 320 70" preserveAspectRatio="none">
                                     <defs>
@@ -408,12 +451,12 @@ function Resultados() {
                                     <p>abre vendas por canal e conta</p>
                                 </article>
 
-                                <article className="tile green" onClick={() => {rolarParaRanking(); setAbaRanking('produtos');}}>
-                                    <span className="badge">lucro</span>
-                                    <span className="ico">💎</span>
-                                    <h3>Mais margem</h3>
-                                    <div className="num">{produtoMargemTop && isFinite(produtoMargemTop.margem) ? produtoMargemTop.margem.toFixed(1) : 0}%</div>
-                                    <p>produto campeão</p>
+                                <article className="tile green" onClick={() => { setAbaPrincipal('drilldown_grupos'); setTimeout(() => window.scrollTo({top:0,behavior:'smooth'}),100); }}>
+                                    <span className="badge">análise</span>
+                                    <span className="ico">📊</span>
+                                    <h3>Grupos / Categorias</h3>
+                                    <div className="num" style={{fontSize:'20px'}}>{gruposAgrupados.length} grupos</div>
+                                    <p>drilldown: grupo {'>'} marca</p>
                                 </article>
 
                                 <article className="tile red" onClick={() => { const el = document.getElementById('prejuizo-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); }}>
@@ -558,7 +601,7 @@ function Resultados() {
                                                                     <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
                                                                     <span className="tag pid">ID: {item.pedido_id}</span>
                                                                 </div>
-                                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)}</p>
+                                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDevenda.toFixed(2)}</p>
                                                                 <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno} | Ref: {item.sku} · Grupo: {item.grupo || 'S/ Grupo'}</p>
                                                             </div>
                                                             <div className="product-profit">
@@ -766,6 +809,131 @@ function Resultados() {
                         </div>
                     )}
 
+                    {abaPrincipal === 'drilldown_grupos' && (
+                        <div className="page-content" style={{padding: '20px'}}>
+                            <div className="infocard" style={{minHeight: '400px', display: 'flex', flexDirection: 'column'}}>
+                                <div className="header" style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'16px'}}>
+                                    <h2 style={{margin:0, fontSize:'18px', display:'flex', alignItems:'center', gap:'8px'}}>
+                                        {drillLevel === 1 ? '📊 Análise por Grupo' : drillLevel === 2 ? '🏷️ Top Fabricantes' : '💎 Top Produtos'}
+                                    </h2>
+                                    {drillLevel > 1 && (
+                                        <button style={{background:'rgba(255,255,255,.1)', border:'1px solid rgba(255,255,255,.2)', color:'white', borderRadius:'12px', padding:'6px 12px', fontSize:'12px', fontWeight:'bold', cursor:'pointer'}} 
+                                                onClick={() => {
+                                                    if(drillLevel === 3) { setDrillLevel(2); setDrillMarca(''); }
+                                                    else if(drillLevel === 2) { setDrillLevel(1); setDrillGrupo(''); }
+                                                }}>⬅ Voltar</button>
+                                    )}
+                                </div>
+                                {drillLevel > 1 && (
+                                    <div style={{fontSize:'11px', color:'var(--cyan)', marginBottom:'12px'}}>
+                                        Grupos {drillLevel >= 2 ? `> ${drillGrupo}` : ''} {drillLevel >= 3 ? `> ${drillMarca}` : ''}
+                                    </div>
+                                )}
+
+                                <div className="list-container" style={{display:'flex', flexDirection:'column', gap:'12px'}}>
+                                    {/* NIVEL 1 */}
+                                    {drillLevel === 1 && gruposAgrupados.map((grupo, i) => {
+                                        const perc = gruposAgrupados[0]?.faturamento > 0 ? (grupo.faturamento / gruposAgrupados[0].faturamento) * 100 : 0;
+                                        const custosTotais = grupo.faturamento - grupo.lucro;
+                                        return (
+                                            <div key={i} className="row-item drilldown-row" style={{background:'rgba(0,0,0,.3)', border:'1px solid rgba(255,255,255,.08)', borderRadius:'16px', padding:'12px 16px', cursor:'pointer', position:'relative', overflow:'hidden', display:'flex', justifyContent:'space-between', alignItems:'center'}} onClick={() => { setDrillGrupo(grupo.nome); setDrillLevel(2); }}>
+                                                <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${perc}%`, background:'linear-gradient(90deg, rgba(21, 216, 255, 0.2), transparent)', borderRadius:'16px', zIndex:0}}></div>
+                                                <div style={{position:'relative', zIndex:1, flex:1, display:'flex', alignItems:'center', gap:'12px'}}>
+                                                    <div style={{width:'28px', height:'28px', borderRadius:'8px', background:'rgba(255,255,255,.1)', display:'grid', placeItems:'center', fontWeight:'bold', fontSize:'12px'}}>{i+1}</div>
+                                                    <div>
+                                                        <h3 style={{margin:0, fontSize:'14px'}}>{grupo.nome}</h3>
+                                                        <p style={{margin:'4px 0 0', fontSize:'11px', color:'var(--soft)'}}>{grupo.skus} SKUs ativos</p>
+                                                    </div>
+                                                </div>
+                                                <div style={{position:'relative', zIndex:1, textAlign:'right'}}>
+                                                    <b style={{display:'block', fontSize:'14px'}}>R$ {grupo.faturamento.toFixed(0)}</b>
+                                                    <span style={{fontSize:'11px', color: grupo.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>Lucro R$ {grupo.lucro.toFixed(0)}</span>
+                                                    <div style={{fontSize:'10px', color:'var(--soft)', marginTop:'2px'}}>Custos: R$ {custosTotais.toFixed(0)}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* NIVEL 2 */}
+                                    {drillLevel === 2 && (() => {
+                                        const itemsFiltrados = dadosProcessados.filter(d => (d.grupo || 'Diversos').trim() === drillGrupo);
+                                        const mapa = {};
+                                        itemsFiltrados.forEach(item => {
+                                            const valRaw = item.marca ? String(item.marca) : 'Diversos';
+                                            const val = valRaw.trim() !== '' ? valRaw.trim() : 'Diversos';
+                                            if (!mapa[val]) mapa[val] = { nome: val, faturamento: 0, lucro: 0, skus: new Set() };
+                                            mapa[val].faturamento += item.valorDeVenda;
+                                            mapa[val].lucro += item.lucro;
+                                            mapa[val].skus.add(item.cod_interno);
+                                        });
+                                        const marcasList = Object.values(mapa).sort((a,b) => b.faturamento - a.faturamento);
+                                        const maxFat = marcasList[0]?.faturamento || 1;
+
+                                        return marcasList.map((marca, i) => {
+                                            const perc = (marca.faturamento / maxFat) * 100;
+                                            const custosTotais = marca.faturamento - marca.lucro;
+                                            return (
+                                                <div key={i} className="row-item drilldown-row" style={{background:'rgba(0,0,0,.3)', border:'1px solid rgba(255,255,255,.08)', borderRadius:'16px', padding:'12px 16px', cursor:'pointer', position:'relative', overflow:'hidden', display:'flex', justifyContent:'space-between', alignItems:'center'}} onClick={() => { setDrillMarca(marca.nome); setDrillLevel(3); }}>
+                                                    <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${perc}%`, background:'linear-gradient(90deg, rgba(255, 106, 26, 0.2), transparent)', borderRadius:'16px', zIndex:0}}></div>
+                                                    <div style={{position:'relative', zIndex:1, flex:1, display:'flex', alignItems:'center', gap:'12px'}}>
+                                                        <div style={{width:'28px', height:'28px', borderRadius:'8px', background:'rgba(255,255,255,.1)', display:'grid', placeItems:'center', fontWeight:'bold', fontSize:'12px'}}>{i+1}</div>
+                                                        <div>
+                                                            <h3 style={{margin:0, fontSize:'14px'}}>{marca.nome}</h3>
+                                                            <p style={{margin:'4px 0 0', fontSize:'11px', color:'var(--soft)'}}>{marca.skus.size} produtos</p>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{position:'relative', zIndex:1, textAlign:'right'}}>
+                                                        <b style={{display:'block', fontSize:'14px'}}>R$ {marca.faturamento.toFixed(0)}</b>
+                                                        <span style={{fontSize:'11px', color: marca.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>Lucro R$ {marca.lucro.toFixed(0)}</span>
+                                                        <div style={{fontSize:'10px', color:'var(--soft)', marginTop:'2px'}}>Custos: R$ {custosTotais.toFixed(0)}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+
+                                    {/* NIVEL 3 */}
+                                    {drillLevel === 3 && (() => {
+                                        const itemsFiltrados = dadosProcessados.filter(d => (d.grupo || 'Diversos').trim() === drillGrupo && (d.marca || 'Diversos').trim() === drillMarca);
+                                        const mapa = {};
+                                        itemsFiltrados.forEach(item => {
+                                            const val = item.cod_interno || 'S/SKU';
+                                            if (!mapa[val]) mapa[val] = { sku: val, titulo: item.titulo, url_imagem: item.url_imagem, faturamento: 0, lucro: 0, unidades: 0 };
+                                            mapa[val].faturamento += item.valorDeVenda;
+                                            mapa[val].lucro += item.lucro;
+                                            mapa[val].unidades += item.quant_itens;
+                                        });
+                                        const produtosList = Object.values(mapa).sort((a,b) => b.faturamento - a.faturamento);
+
+                                        return produtosList.map((prod, i) => {
+                                            const custosTotais = prod.faturamento - prod.lucro;
+                                            return (
+                                                <div key={i} className="row-item" style={{background:'rgba(0,0,0,.3)', border:'1px solid rgba(255,255,255,.08)', borderRadius:'16px', padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                                    <div style={{flex:1, display:'flex', alignItems:'center', gap:'12px'}}>
+                                                        <div style={{width:'36px', height:'36px', borderRadius:'8px', background:'rgba(255,255,255,.05)', display:'grid', placeItems:'center'}}>
+                                                            {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
+                                                                <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} style={{width:'100%',height:'100%',objectFit:'contain',borderRadius:'8px'}} alt=""/>
+                                                            ) : '📦'}
+                                                        </div>
+                                                        <div>
+                                                            <h3 style={{margin:0, fontSize:'13px'}}>{prod.titulo}</h3>
+                                                            <p style={{margin:'4px 0 0', fontSize:'11px', color:'var(--soft)'}}>Cód Interno: {prod.sku} | {prod.unidades} Unid.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{textAlign:'right'}}>
+                                                        <b style={{display:'block', fontSize:'14px'}}>R$ {prod.faturamento.toFixed(0)}</b>
+                                                        <span style={{fontSize:'11px', color: prod.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>Lucro R$ {prod.lucro.toFixed(0)}</span>
+                                                        <div style={{fontSize:'10px', color:'var(--soft)', marginTop:'2px'}}>Custos: R$ {custosTotais.toFixed(0)}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {abaPrincipal === 'pedidos' && (
                         <div className="page-content pedidos-view">
                             <div className="section" style={{marginTop:'0'}}>
@@ -773,26 +941,36 @@ function Resultados() {
                             </div>
                             
                             <div className="orders-list">
-                                {dadosProcessados.map((item, index) => {
-                                    const v = (item.vendedor || '').trim();
-                                    const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
-                                    return (
-                                        <article className={`product-row ${borderClass}`} key={index}>
-                                            <div className="product-photo">
-                                                {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
-                                                    <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="produto" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
-                                                ) : '📦'}
-                                            </div>
-                                            <div className="product-info">
-                                                <h3>{item.titulo || 'Produto não cadastrado'}</h3>
-                                                <div className="tags">
-                                                    <span className="tag quant">{item.quant_itens} UND.</span>
-                                                    <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
-                                                    <span className="tag pid">ID: {item.pedido_id}</span>
-                                                    {item.catalogo === 'S' && <span className="tag cat">⚡ CATÁLOGO</span>}
-                                                    {item.full_status === 'TRUE' && <span className="tag full">⚡ FULL</span>}
+                                {(() => {
+                                    const pedidoCounts = {};
+                                    dadosProcessados.forEach(d => {
+                                        pedidoCounts[d.pedido_id] = (pedidoCounts[d.pedido_id] || 0) + 1;
+                                    });
+
+                                    return dadosProcessados.map((item, index) => {
+                                        const v = (item.vendedor || '').trim();
+                                        const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                        const ehCarrinho = pedidoCounts[item.pedido_id] > 1;
+
+                                        return (
+                                            <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
+                                                <div className="product-photo">
+                                                    {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                        <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="produto" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                    ) : '📦'}
                                                 </div>
-                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)}</p>
+                                                <div className="product-info">
+                                                    <h3>{item.titulo || 'Produto não cadastrado'}</h3>
+                                                    <div className="tags">
+                                                        <span className="tag quant">{item.quant_itens} UND.</span>
+                                                        <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                        <span className="tag pid">ID: {item.pedido_id}</span>
+                                                        {item.catalogo === 'S' && <span className="tag cat">⚡ CATÁLOGO</span>}
+                                                        {item.full_status === 'TRUE' && <span className="tag full">⚡ FULL</span>}
+                                                        {ehCarrinho && <span className="tag carrinho" style={{background: '#ff2d55', color: 'white'}}>🛒 CARRINHO</span>}
+                                                    </div>
+                                                    <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)}</p>
+                                                    <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno}</p>
                                             </div>
                                             <div className="product-profit">
                                                 <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
@@ -801,7 +979,8 @@ function Resultados() {
                                             </div>
                                         </article>
                                     );
-                                })}
+                                    });
+                                })()}
                             </div>
                         </div>
                     )}
@@ -835,7 +1014,8 @@ function Resultados() {
                                                     <span className="tag full">⚡ FULL</span>
                                                     <span className="tag pid">ID: {item.pedido_id}</span>
                                                 </div>
-                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)}</p>
+                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDevenda.toFixed(2)}</p>
+                                                <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno}</p>
                                             </div>
                                             <div className="product-profit">
                                                 <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
@@ -848,6 +1028,94 @@ function Resultados() {
                             </div>
                         </div>
                     )}
+
+                    {/* MODAL DE RESUMO DO PEDIDO */}
+                    {pedidoSelecionado && (() => {
+                        const itensDoPedido = dadosProcessados.filter(d => d.pedido_id === pedidoSelecionado);
+                        if (itensDoPedido.length === 0) return null;
+                        const totalPedidoVenda = itensDoPedido[0].total_pedido;
+                        const totalItensCusto = itensDoPedido.reduce((acc, curr) => acc + curr.custoProduto, 0);
+                        const totalItensTaxa = itensDoPedido.reduce((acc, curr) => acc + curr.taxaFixa, 0);
+                        const totalItensComissao = itensDoPedido.reduce((acc, curr) => acc + curr.tarifaDeVenda, 0);
+                        const totalItensFrete = itensDoPedido.reduce((acc, curr) => acc + curr.frete, 0);
+                        const totalItensImposto = itensDoPedido.reduce((acc, curr) => acc + curr.descImposto, 0);
+                        const totalItensOperacional = itensDoPedido.reduce((acc, curr) => acc + curr.descOperacional, 0);
+                        
+                        const lucroTotal = itensDoPedido.reduce((acc, curr) => acc + curr.lucro, 0);
+
+                        return (
+                            <div style={{position: 'fixed', top:0, left:0, right:0, bottom:0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}>
+                                <div style={{background: 'var(--bg)', borderRadius: '24px', width: '100%', maxWidth: '400px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '80vh'}}>
+                                    <div style={{padding: '16px', background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                        <div>
+                                            <h3 style={{margin: 0, fontSize: '16px'}}>Detalhes do Pedido</h3>
+                                            <p style={{margin: '2px 0 0', fontSize: '12px', color: 'var(--soft)'}}>ID: {pedidoSelecionado}</p>
+                                        </div>
+                                        <button onClick={() => setPedidoSelecionado(null)} style={{background: 'transparent', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer'}}>✕</button>
+                                    </div>
+                                    <div style={{padding: '16px', overflowY: 'auto', flex: 1}}>
+                                        <div style={{marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                            <span style={{color: 'var(--soft)', fontSize: '13px'}}>Itens do Carrinho ({itensDoPedido.length})</span>
+                                        </div>
+                                        {itensDoPedido.map((it, idx) => (
+                                            <div key={idx} style={{background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '12px', marginBottom: '8px', display: 'flex', gap: '12px', alignItems: 'center'}}>
+                                                <div style={{width:'40px', height:'40px', borderRadius:'8px', background:'rgba(255,255,255,.05)', display:'grid', placeItems:'center'}}>
+                                                    {it.url_imagem && it.url_imagem.trim() !== 'None' ? (
+                                                        <img src={it.url_imagem.startsWith('http') ? it.url_imagem : 'https://' + it.url_imagem} style={{width:'100%',height:'100%',objectFit:'contain',borderRadius:'8px'}} alt=""/>
+                                                    ) : '📦'}
+                                                </div>
+                                                <div style={{flex: 1}}>
+                                                    <h4 style={{margin:0, fontSize:'13px'}}>{it.titulo || 'Produto'}</h4>
+                                                    <p style={{margin:'2px 0 0', fontSize:'11px', color:'var(--soft)'}}>{it.quant_itens}x | SKU: {it.cod_interno}</p>
+                                                </div>
+                                                <div style={{textAlign: 'right'}}>
+                                                    <span style={{fontSize:'12px', color:'var(--orange)'}}>Custo R$ {it.custoProduto.toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <div style={{background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '12px', marginTop: '16px'}}>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Faturamento Total</span>
+                                                <b>R$ {totalPedidoVenda.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Custos dos Produtos</span>
+                                                <b style={{color: 'var(--red)'}}>-R$ {totalItensCusto.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Taxas Fixas</span>
+                                                <b style={{color: 'var(--red)'}}>-R$ {totalItensTaxa.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Comissões</span>
+                                                <b style={{color: 'var(--red)'}}>-R$ {totalItensComissao.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Fretes</span>
+                                                <b style={{color: 'var(--red)'}}>-R$ {totalItensFrete.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Imposto ({imposto}%)</span>
+                                                <b style={{color: 'var(--red)'}}>-R$ {totalItensImposto.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px'}}>
+                                                <span style={{color: 'var(--soft)'}}>Operacional ({custoOperacional}%)</span>
+                                                <b style={{color: 'var(--red)'}}>-R$ {totalItensOperacional.toFixed(2)}</b>
+                                            </div>
+                                            <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '15px'}}>
+                                                <span>Lucro Líquido</span>
+                                                <b style={{color: lucroTotal > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {lucroTotal.toFixed(2)}</b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{padding: '16px', background: 'rgba(255,255,255,0.05)', borderTop: '1px solid rgba(255,255,255,0.1)'}}>
+                                        <button onClick={() => setPedidoSelecionado(null)} style={{width: '100%', background: 'var(--cyan)', color: 'black', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer'}}>Entendido</button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </>
             )}
 

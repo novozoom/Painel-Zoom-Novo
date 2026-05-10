@@ -461,6 +461,7 @@ button{font:inherit;color:inherit;outline:none;cursor:pointer;}
     radial-gradient(circle at 35% 25%, rgba(255,255,255,.98), rgba(235,237,240,.86) 45%, rgba(150,155,165,.32) 100%);
   display:grid;place-items:center;font-size:38px;box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 12px 25px rgba(0,0,0,.22);
   object-fit:contain;
+  overflow:hidden;
 }
 .product-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
 .product-info h3{margin:0;font-size:14px;line-height:1.22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
