@@ -252,8 +252,10 @@ function Resultados() {
 
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
             
-            // Corrige o bug do carrinho: usa o valor_total DO ITEM, e não do pedido inteiro
-            const valorDeVenda = item.vlr_total || item.total_pedido; 
+            // FIX: vlr_total do ERP é o valor LÍQUIDO (pós-comissão) em muitas origens.
+            // Usar total_pedido dividido pela quantidade de itens distintos para obter o valor bruto por item.
+            const itensNoPedido = item.itens || 1;
+            const valorDeVenda = item.total_pedido / itensNoPedido; 
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
