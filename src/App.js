@@ -676,7 +676,7 @@ function Resultados() {
                                                                 <div className="tags">
                                                                     <span className="tag quant">{item.quant_itens} UND.</span>
                                                                     <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
-                                                                    <span className="tag pid">ID: {item.pedido_id}</span>
+                                                                    <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
                                                                 </div>
                                                                 <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDevenda.toFixed(2)}</p>
                                                                 <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno} | Ref: {item.sku} · Grupo: {item.grupo || 'S/ Grupo'}</p>
@@ -818,7 +818,7 @@ function Resultados() {
                                                         <h3>{item.titulo || 'Produto não identificado'}</h3>
                                                         <div className="tags">
                                                             <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
-                                                            <span className="tag pid">ID: {item.pedido_id}</span>
+                                                            <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
                                                         </div>
                                                         <p style={{marginTop: '4px', marginBottom: '4px', color: '#8b8e96', fontSize: '11px'}}>Fabricante: {item.marca} | SKU: {item.cod_interno} | Ref: {item.sku}</p>
                                                         <div className="breakdown-mini">
@@ -1064,7 +1064,7 @@ function Resultados() {
                                                     <div className="tags">
                                                         <span className="tag quant">{item.quant_itens} UND.</span>
                                                         <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
-                                                        <span className="tag pid">ID: {item.pedido_id}</span>
+                                                        <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
                                                         {item.catalogo === 'S' && <span className="tag cat">⚡ CATÁLOGO</span>}
                                                         {item.full_status === 'TRUE' && <span className="tag full">⚡ FULL</span>}
                                                         {ehCarrinho && <span className="tag carrinho" style={{background: '#ff2d55', color: 'white'}}>🛒 CARRINHO</span>}
@@ -1112,7 +1112,7 @@ function Resultados() {
                                                     <span className="tag quant">{item.quant_itens} UND.</span>
                                                     <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
                                                     <span className="tag full">⚡ FULL</span>
-                                                    <span className="tag pid">ID: {item.pedido_id}</span>
+                                                    <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
                                                 </div>
                                                 <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDevenda.toFixed(2)}</p>
                                                 <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno}</p>
