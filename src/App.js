@@ -188,11 +188,14 @@ function Resultados() {
     const dadosProcessados = useMemo(() => {
         return dados.map(item => {
             let tituloLimpo = item.titulo || '';
-            let codInterno = item.sku;
+            // Puxa o cód interno oficial criado na nova coluna (fallback para extração do título ou sku do marketplace)
+            let codInterno = item.cod_interno || item.sku;
+            
             if (tituloLimpo && tituloLimpo.startsWith('[')) {
                 const fechamento = tituloLimpo.indexOf(']');
                 if (fechamento > 0) {
-                    codInterno = tituloLimpo.substring(1, fechamento);
+                    const extraido = tituloLimpo.substring(1, fechamento);
+                    codInterno = item.cod_interno || extraido; // Usa a coluna se existir, senão usa o extraído
                     tituloLimpo = tituloLimpo.substring(fechamento + 1).trim();
                 }
             }

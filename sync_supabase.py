@@ -143,7 +143,8 @@ ORDER BY
             "url_imagem": str(dicionario_resultado.get("URL", "")),
             "itens": int(dicionario_resultado.get("ITENS") or 0),
             "marca": str(dicionario_resultado.get("MARCA") or "Diversos"),
-            "grupo": str(dicionario_resultado.get("GRUPO") or "Diversos")
+            "grupo": str(dicionario_resultado.get("GRUPO") or "Diversos"),
+            "cod_interno": str(dicionario_resultado.get("COD_INTERNO", ""))
         }
         
         chave_unica = f"{registro['pedido_id']}_{registro['sku']}"
