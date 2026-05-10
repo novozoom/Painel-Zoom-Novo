@@ -198,10 +198,14 @@ function Resultados() {
             }
 
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
-            const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, item.total_pedido, item.comissao_sku);
+            
+            // Corrige o bug do carrinho: usa o valor_total DO ITEM, e não do pedido inteiro
+            const valorDeVenda = item.vlr_total || item.total_pedido; 
+            
+            const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
             const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, item.quant_itens);
-            const valorDeVenda = item.total_pedido;
+            
             const descImposto = valorDeVenda * (imposto / 100);
             const descOperacional = valorDeVenda * (custoOperacional / 100);
             const lucro = CalcularTotal(valorDeVenda, taxaFixa, tarifaDeVenda, custoProduto, frete, imposto, custoOperacional);
