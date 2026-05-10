@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import React, {useEffect, useState, useMemo} from 'react';
 import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
@@ -129,6 +130,31 @@ function Resultados() {
     }, []);
 
     // Sincronizar e buscar dados
+    const exportToXLSX = (pedidos) => {
+        const data = pedidos.map(item => ({
+            "Data": item.data_venda,
+            "Pedido ID": item.pedido_id,
+            "Conta": item.origem_nome || item.vendedor,
+            "SKU / Ref": item.sku,
+            "Cód Interno": item.cod_interno,
+            "Título": item.titulo,
+            "Itens": item.quant_itens,
+            "Venda (R$)": parseFloat(item.valorDeVenda.toFixed(2)),
+            "Custo (R$)": parseFloat(item.custoProduto.toFixed(2)),
+            "Frete (R$)": parseFloat(item.frete.toFixed(2)),
+            "Comissão (R$)": parseFloat(item.tarifaDeVenda.toFixed(2)),
+            "Taxa Fixa (R$)": parseFloat(item.taxaFixa.toFixed(2)),
+            "Imposto (R$)": parseFloat(item.descImposto.toFixed(2)),
+            "Operacional (R$)": parseFloat(item.descOperacional.toFixed(2)),
+            "Lucro (R$)": parseFloat(item.lucro.toFixed(2)),
+            "Margem (%)": isFinite(item.margemLucro) ? parseFloat(item.margemLucro.toFixed(2)) : 0
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Pedidos");
+        XLSX.writeFile(workbook, `Relatorio_Margens_${new Date().getTime()}.xlsx`);
+    };
+
     const syncEBuscar = async () => {
         try {
             const dataInicioStr = format(startDate, 'yyyy-MM-dd');
@@ -219,6 +245,15 @@ function Resultados() {
 
     const lucroLiquidoTotal = useMemo(() => {
         return dadosProcessados.reduce((acc, curr) => acc + curr.lucro, 0);
+    }, [dadosProcessados]);
+
+    const margensResumo = useMemo(() => {
+        const resumo = { vermelho: 0, laranja: 0, amarelo: 0, verde: 0 };
+        dadosProcessados.forEach(item => {
+            const nivel = getMarginLevel(item.margemLucro);
+            if (resumo[nivel] !== undefined) resumo[nivel]++;
+        });
+        return resumo;
     }, [dadosProcessados]);
 
     // Agrupamentos
@@ -392,6 +427,29 @@ function Resultados() {
                                     <div className="mini"><span>Lucro</span><b>R$ {lucroLiquidoTotal.toFixed(0)}</b></div>
                                     <div className="mini"><span>Margem</span><b className="green">{faturamentoDeHoje > 0 ? (lucroLiquidoTotal / faturamentoDeHoje * 100).toFixed(1) : 0}%</b></div>
                                     <div className="mini"><span>Ticket</span><b>R$ {numeroDePedidosUnicos > 0 ? (faturamentoDeHoje / numeroDePedidosUnicos).toFixed(0) : 0}</b></div>
+                                </div>
+
+                                <div className="margin-cards" style={{marginTop: '20px'}}>
+                                    <div className="margin-card mc-red" onClick={() => setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Pedidos em Prejuízo (< 0%)'})}>
+                                        <h4>Prejuízo</h4>
+                                        <p className="mc-val">{margensResumo.vermelho}</p>
+                                        <p className="mc-label" style={{color: 'var(--red)'}}>&lt; 0%</p>
+                                    </div>
+                                    <div className="margin-card mc-orange" onClick={() => setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Alerta de Margem (0 a 10%)'})}>
+                                        <h4>Atenção</h4>
+                                        <p className="mc-val">{margensResumo.laranja}</p>
+                                        <p className="mc-label" style={{color: 'var(--orange)'}}>0% a 9.99%</p>
+                                    </div>
+                                    <div className="margin-card mc-yellow" onClick={() => setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Margem Aceitável (10 a 20%)'})}>
+                                        <h4>Aceitável</h4>
+                                        <p className="mc-val">{margensResumo.amarelo}</p>
+                                        <p className="mc-label" style={{color: 'var(--yellow)'}}>10% a 19.99%</p>
+                                    </div>
+                                    <div className="margin-card mc-green" onClick={() => setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Margem Saudável (>= 20%)'})}>
+                                        <h4>Saudável</h4>
+                                        <p className="mc-val">{margensResumo.verde}</p>
+                                        <p className="mc-label" style={{color: 'var(--green)'}}>&gt;= 20%</p>
+                                    </div>
                                 </div>
 
                                 <div style={{textAlign: 'center', marginTop: '10px'}}>
@@ -582,13 +640,24 @@ function Resultados() {
                             </section>
 
                             {filtroRank && (() => {
-                                if (filtroRank.tipo === 'sku') {
-                                    const pedidosFiltrados = dadosProcessados.filter(item => item.cod_interno === filtroRank.valor);
+                                if (filtroRank.tipo === 'sku' || filtroRank.tipo === 'margem') {
+                                    const pedidosFiltrados = dadosProcessados.filter(item => {
+                                        if (filtroRank.tipo === 'sku') return item.cod_interno === filtroRank.valor;
+                                        if (filtroRank.tipo === 'margem') return getMarginLevel(item.margemLucro) === filtroRank.valor;
+                                        return false;
+                                    });
                                     return (
                                         <>
-                                            <div className="section" id="filtro-rank-detail">
-                                                <h2>📋 Pedidos: {filtroRank.valor.trim()} ({pedidosFiltrados.length})</h2>
-                                                <button onClick={() => setFiltroRank(null)}>✕ Fechar</button>
+                                            <div className="section" id="filtro-rank-detail" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                                <div>
+                                                    <h2>📋 Pedidos: {filtroRank.titulo || filtroRank.valor.trim()} ({pedidosFiltrados.length})</h2>
+                                                </div>
+                                                <div style={{display: 'flex', gap: '8px'}}>
+                                                    {filtroRank.tipo === 'margem' && (
+                                                        <button onClick={() => exportToXLSX(pedidosFiltrados)} style={{background: 'rgba(21,216,255,0.1)', color: 'var(--cyan)', border: '1px solid var(--cyan)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'}}>📥 Baixar XLSX</button>
+                                                    )}
+                                                    <button onClick={() => setFiltroRank(null)} style={{background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'}}>✕ Fechar</button>
+                                                </div>
                                             </div>
                                             <div className="orders-list">
                                                 {pedidosFiltrados.map((item, index) => {
@@ -614,7 +683,7 @@ function Resultados() {
                                                             <div className="product-profit">
                                                                 <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
                                                                 <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
-                                                                <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                                <span style={{color: getMarginColor(item.margemLucro)}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
                                                             </div>
                                                         </article>
                                                     );
@@ -1139,3 +1208,5 @@ function Resultados() {
 }
 
 export default Resultados;
+
+
