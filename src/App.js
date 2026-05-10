@@ -14,10 +14,10 @@ const getMarginColor = (margin) => {
 
 const getMarginLevel = (margin) => {
     if (!isFinite(margin)) return 'N/A';
-    if (margin < 0) return 'Vermelho';
-    if (margin < 10) return 'Laranja';
-    if (margin < 20) return 'Amarelo';
-    return 'Verde';
+    if (margin < 0) return 'vermelho';
+    if (margin < 10) return 'laranja';
+    if (margin < 20) return 'amarelo';
+    return 'verde';
 };
 
 function Resultados() {
