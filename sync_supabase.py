@@ -140,7 +140,6 @@ ORDER BY
             "vlr_custo": float(dicionario_resultado.get("VLR_CUSTO") or 0),
             "titulo": f"[{str(dicionario_resultado.get('COD_INTERNO', ''))}] {str(dicionario_resultado.get('TITULO') or '')}",
             "catalogo": str(dicionario_resultado.get("CATALOGO", "")),
-            "full_status": str(dicionario_resultado.get("FULL", "")),
             "url_imagem": str(dicionario_resultado.get("URL", "")),
             "itens": int(dicionario_resultado.get("ITENS") or 0),
             "marca": str(dicionario_resultado.get("MARCA") or "Diversos"),
@@ -159,24 +158,8 @@ ORDER BY
     if not registros:
         return {"status": "success", "message": "Nenhum pedido encontrado para sincronizar.", "count": 0}
 
-    # Preservar full_status enriquecido pela API ML: buscar registros que já são TRUE no Supabase
-    try:
-        datas_unicas = list(set(r['data_venda'][:10] for r in registros if r.get('data_venda')))
-        full_existentes = set()
-        for data in datas_unicas:
-            res = supabase.table('dashboard_pedidos').select('pedido_id, sku').eq('data_venda', data).eq('full_status', 'TRUE').execute()
-            for item in res.data:
-                full_existentes.add(f"{item['pedido_id']}_{item['sku']}")
-        
-        # Se o ERP diz FALSE mas o Supabase já tem TRUE (via API ML), manter TRUE
-        for registro in registros:
-            chave = f"{registro['pedido_id']}_{registro['sku']}"
-            if chave in full_existentes and registro['full_status'] != 'TRUE':
-                registro['full_status'] = 'TRUE'
-        
-        print(f"Preservados {len(full_existentes)} registros com Full enriquecido pela API.")
-    except Exception as e:
-        print(f"Aviso: não foi possível verificar full existentes: {e}")
+    # NOTA: full_status NÃO é incluído no upsert.
+    # Ele é gerenciado exclusivamente pelo enrich_ml_api.py via API oficial do Mercado Livre.
 
     # Fazer Upsert no Supabase
     # Dividir em blocos de 500 para evitar timeout de request
