@@ -988,24 +988,26 @@ function Resultados() {
                                         return produtosList.map((prod, i) => {
                                             const custosTotais = prod.faturamento - prod.lucro;
                                             return (
-                                                <div key={i} className="row-item" style={{background:'rgba(0,0,0,.3)', border:'1px solid rgba(255,255,255,.08)', borderRadius:'16px', padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                                                    <div style={{flex:1, display:'flex', alignItems:'center', gap:'12px'}}>
-                                                        <div style={{width:'36px', height:'36px', borderRadius:'8px', background:'rgba(255,255,255,.05)', display:'grid', placeItems:'center'}}>
-                                                            {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
-                                                                <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} style={{width:'100%',height:'100%',objectFit:'contain',borderRadius:'8px'}} alt=""/>
-                                                            ) : '📦'}
-                                                        </div>
-                                                        <div>
-                                                            <h3 style={{margin:0, fontSize:'13px'}}>{prod.titulo}</h3>
-                                                            <p style={{margin:'4px 0 0', fontSize:'11px', color:'var(--soft)'}}>Cód Interno: {prod.sku} | {prod.unidades} Unid.</p>
-                                                        </div>
+                                                <article className="product-row" key={i} style={{cursor:'default'}}>
+                                                    <div className="product-photo">
+                                                        {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
+                                                            <img src={prod.url_imagem.startsWith('http') ? prod.url_imagem : 'https://' + prod.url_imagem} alt="produto" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                        ) : '📦'}
                                                     </div>
-                                                    <div style={{textAlign:'right'}}>
-                                                        <b style={{display:'block', fontSize:'14px'}}>R$ {prod.faturamento.toFixed(0)}</b>
-                                                        <span style={{fontSize:'11px', color: prod.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>Lucro R$ {prod.lucro.toFixed(0)}</span>
-                                                        <div style={{fontSize:'10px', color:'var(--soft)', marginTop:'2px'}}>Custos: R$ {custosTotais.toFixed(0)}</div>
+                                                    <div className="product-info">
+                                                        <h3>{prod.titulo || 'Produto não cadastrado'}</h3>
+                                                        <div className="tags">
+                                                            <span className="tag quant">{prod.unidades} UND. VENDIDAS</span>
+                                                        </div>
+                                                        <p>Custos Totais: R$ {custosTotais.toFixed(2)}</p>
+                                                        <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>Cód Interno: {prod.sku}</p>
                                                     </div>
-                                                </div>
+                                                    <div className="product-profit">
+                                                        <span className="pedido-total">R$ {prod.faturamento.toFixed(2)}</span>
+                                                        <b style={{color: prod.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {prod.lucro.toFixed(2)}</b>
+                                                        <span style={{color: getMarginColor(custosTotais > 0 ? (prod.lucro / custosTotais) * 100 : 100), fontWeight: 'bold'}}>{isFinite(custosTotais > 0 ? (prod.lucro / custosTotais) * 100 : 100) ? (custosTotais > 0 ? (prod.lucro / custosTotais) * 100 : 100).toFixed(1) : 0}%</span>
+                                                    </div>
+                                                </article>
                                             );
                                         });
                                     })()}
