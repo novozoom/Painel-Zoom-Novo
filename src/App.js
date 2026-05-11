@@ -48,6 +48,7 @@ function Resultados() {
     const [rankLimit, setRankLimit] = useState(10);
     const [ordenacao, setOrdenacao] = useState('pedidos');
     const [filtroRank, setFiltroRank] = useState(null); // {tipo:'marca',valor:'PARAMOUNT'}
+    const [filtroMarketplace, setFiltroMarketplace] = useState(null); // 'MERCADO LIVRE', 'SHOPEE', etc
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -1016,7 +1017,39 @@ function Resultados() {
                     {abaPrincipal === 'pedidos' && (
                         <div className="page-content pedidos-view">
                             <div className="section" style={{marginTop:'0'}}>
-                                <h2>{filtroRank && filtroRank.tipo === 'margem' ? `Pedidos: ${filtroRank.titulo}` : filtroRank && filtroRank.tipo === 'carrinho' ? `🛒 Pedidos Carrinho (${filtroRank.titulo})` : `Todos os ${dadosProcessados.length} pedidos`}</h2>
+                                <h2>{filtroMarketplace ? `${filtroMarketplace}` : filtroRank && filtroRank.tipo === 'margem' ? `Pedidos: ${filtroRank.titulo}` : filtroRank && filtroRank.tipo === 'carrinho' ? `🛒 Pedidos Carrinho` : `Todos os ${dadosProcessados.length} pedidos`}</h2>
+                            </div>
+
+                            {/* MARKETPLACE FILTER CHIPS */}
+                            <div style={{display: 'flex', gap: '8px', marginBottom: '10px', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+                                {(() => {
+                                    const mkpCounts = {};
+                                    dadosProcessados.forEach(d => {
+                                        const v = (d.vendedor || '').trim();
+                                        mkpCounts[v] = (mkpCounts[v] || 0) + 1;
+                                    });
+                                    const mkpConfig = [
+                                        { key: 'MERCADO LIVRE', label: 'ML', emoji: '🟡', bg: 'rgba(255,230,0,0.08)', border: 'rgba(255,230,0,0.35)', color: '#ffe600' },
+                                        { key: 'SHOPEE', label: 'Shopee', emoji: '🟠', bg: 'rgba(255,90,0,0.08)', border: 'rgba(255,90,0,0.35)', color: '#ff5a00' },
+                                        { key: 'MAGAZINE LUIZA', label: 'Magalu', emoji: '🔵', bg: 'rgba(29,123,255,0.08)', border: 'rgba(29,123,255,0.35)', color: '#1d7bff' },
+                                        { key: 'TIKTOK', label: 'TikTok', emoji: '⚫', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.2)', color: '#fff' },
+                                    ];
+                                    return mkpConfig.filter(m => mkpCounts[m.key]).map(m => (
+                                        <div key={m.key}
+                                            onClick={() => filtroMarketplace === m.key ? setFiltroMarketplace(null) : setFiltroMarketplace(m.key)}
+                                            style={{
+                                                flex: '1', minWidth: '70px', padding: '10px 8px', borderRadius: '14px',
+                                                background: filtroMarketplace === m.key ? m.bg.replace(/[\d.]+\)$/, '0.2)') : m.bg,
+                                                border: `1.5px solid ${filtroMarketplace === m.key ? m.color : m.border}`,
+                                                textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
+                                                boxShadow: filtroMarketplace === m.key ? `0 0 14px ${m.border}` : 'none',
+                                                transform: filtroMarketplace === m.key ? 'scale(1.03)' : 'scale(1)',
+                                            }}>
+                                            <div style={{fontSize: '11px', fontWeight: 600, color: 'var(--soft)', marginBottom: '2px'}}>{m.emoji} {m.label}</div>
+                                            <div style={{fontSize: '20px', fontWeight: 800, color: m.color}}>{mkpCounts[m.key]}</div>
+                                        </div>
+                                    ));
+                                })()}
                             </div>
 
                             <div className="margin-cards-sticky">
@@ -1057,16 +1090,23 @@ function Resultados() {
                                     });
 
                                     let pedidosAExibir = dadosProcessados;
+
+                                    // Filtro marketplace (aplicado primeiro)
+                                    if (filtroMarketplace) {
+                                        pedidosAExibir = pedidosAExibir.filter(item => (item.vendedor || '').trim() === filtroMarketplace);
+                                    }
+
+                                    // Filtro margem/carrinho (aplicado por cima)
                                     if (filtroRank && filtroRank.tipo === 'margem') {
-                                        pedidosAExibir = dadosProcessados.filter(item => getMarginLevel(item.margemLucro) === filtroRank.valor);
+                                        pedidosAExibir = pedidosAExibir.filter(item => getMarginLevel(item.margemLucro) === filtroRank.valor);
                                     } else if (filtroRank && filtroRank.tipo === 'carrinho') {
-                                        pedidosAExibir = dadosProcessados.filter(item => pedidoCounts[item.pedido_id] > 1);
+                                        pedidosAExibir = pedidosAExibir.filter(item => pedidoCounts[item.pedido_id] > 1);
                                     }
 
                                     return (
                                         <>
                                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
-                                                <span style={{fontSize: '13px', color: 'var(--soft)'}}>{filtroRank ? `${pedidosAExibir.length} pedidos filtrados` : `${pedidosAExibir.length} pedidos`}</span>
+                                                <span style={{fontSize: '13px', color: 'var(--soft)'}}>{(filtroRank || filtroMarketplace) ? `${pedidosAExibir.length} pedidos filtrados` : `${pedidosAExibir.length} pedidos`}</span>
                                                 <button onClick={() => exportToXLSX(pedidosAExibir)} style={{background: 'rgba(21,216,255,0.1)', color: 'var(--cyan)', border: '1px solid var(--cyan)', padding: '6px 14px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold'}}>📥 Exportar CSV</button>
                                             </div>
                                             {pedidosAExibir.map((item, index) => {
