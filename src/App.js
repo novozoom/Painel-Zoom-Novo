@@ -681,7 +681,7 @@ function Resultados() {
                                                                     <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
                                                                     <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
                                                                 </div>
-                                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDevenda.toFixed(2)}</p>
+                                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDeVenda.toFixed(2)}</p>
                                                                 <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno} | Ref: {item.sku} · Grupo: {item.grupo || 'S/ Grupo'}</p>
                                                             </div>
                                                             <div className="product-profit">
@@ -1181,7 +1181,7 @@ function Resultados() {
                                                     <span className="tag full">⚡ FULL</span>
                                                     <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
                                                 </div>
-                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDevenda.toFixed(2)}</p>
+                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDeVenda.toFixed(2)}</p>
                                                 <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno}</p>
                                             </div>
                                             <div className="product-profit">
