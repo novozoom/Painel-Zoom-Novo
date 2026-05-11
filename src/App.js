@@ -229,8 +229,8 @@ function Resultados() {
         setIsLoading(true);
         syncEBuscar();
 
-        // Recarrega silenciosamente a cada 10 seg
-        const tempoDeAtualizacao = setInterval(syncEBuscar, 10000);
+        // Recarrega silenciosamente a cada 2 min
+        const tempoDeAtualizacao = setInterval(syncEBuscar, 120000);
         return () => clearInterval(tempoDeAtualizacao);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startDate, endDate]);
