@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup Hero Ontem</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body {
+            background-color: #1a1b1e;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: white;
+        }
+
+        .phone {
+            width: 390px;
+            background: #121214;
+            border-radius: 40px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero {
+            background: linear-gradient(180deg, rgba(255,106,26,0.15) 0%, rgba(26,27,30,0) 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 28px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: #ff6a1a;
+            filter: blur(80px);
+            opacity: 0.3;
+            border-radius: 50%;
+        }
+
+        .label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 38px;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .sub {
+            font-size: 13px;
+            color: #b8bbc4;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .green {
+            color: #2ed573;
+            font-weight: 700;
+        }
+
+        /* NOVA ÁREA DE ONTEM */
+        .ontem-discreto {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .ontem-discreto::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        .hero-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .mini {
+            flex: 1;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .mini span {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.5px;
+        }
+
+        .mini b {
+            font-size: 16px;
+        }
+
+        .spark {
+            width: 100%;
+            height: 60px;
+            margin-top: 16px;
+            display: block;
+        }
+
+        .cta {
+            margin-top: 20px;
+        }
+
+        .main-btn {
+            width: 100%;
+            background: linear-gradient(90deg, #ff8a3d, #ff6a1a);
+            color: #1a1b1e;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255,106,26,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone">
+        <section class="hero">
+            <div class="label">vendas do período</div>
+            <h2>R$ 3.758</h2>
+            
+            <div class="sub">
+                <span class="green">↓ 86.6% vs ontem</span> · 53 pedidos
+            </div>
+            
+            <!-- Nova informação discreta de ontem -->
+            <div class="ontem-discreto">
+                Ontem fechou em R$ 4.339 com 62 pedidos
+            </div>
+
+            <div class="hero-row">
+                <div class="mini">
+                    <span>LUCRO</span>
+                    <b>R$ 1.252</b>
+                </div>
+                <div class="mini">
+                    <span>MARGEM</span>
+                    <b class="green">33.3%</b>
+                </div>
+                <div class="mini">
+                    <span>TICKET</span>
+                    <b>R$ 71</b>
+                </div>
+            </div>
+
+            <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
+                        <stop stopColor="#ff6a1a" stopOpacity=".65"/>
+                        <stop offset="1" stopColor="#ff6a1a" stopOpacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d="M0,55 C30,47 43,20 74,28 C105,37 112,49 145,35 C174,22 190,20 218,33 C246,45 265,30 287,20 C302,13 312,16 320,10 L320,70 L0,70 Z" fill="url(#area)"/>
+                <path d="M0,55 C30,47 43,20 74,28 C105,37 112,49 145,35 C174,22 190,20 218,33 C246,45 265,30 287,20 C302,13 312,16 320,10" fill="none" stroke="#ff8a3d" strokeWidth="4"/>
+                <path d="M0,62 C40,55 58,48 87,54 C119,62 134,48 160,51 C190,55 205,63 231,55 C260,47 286,55 320,44" fill="none" stroke="#15d8ff" strokeWidth="2" opacity=".8"/>
+            </svg>
+
+            <div class="cta">
+                <button class="main-btn">Ver pedidos ›</button>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>
