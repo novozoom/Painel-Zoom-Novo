@@ -9,7 +9,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def sincronizar_pedidos(data_inicio, data_fim):
-    conn = pyodbc.connect('DRIVER={ODBC Driver 18 for SQL Server};'
+    conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};'
                           'SERVER=200.187.69.101;'
                           'DATABASE=AmbarZoomBrinquedos;'
                           'UID=zoombrinquedos;'

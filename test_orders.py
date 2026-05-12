@@ -2,7 +2,7 @@ import pyodbc
 import requests
 import enrich_ml_api
 
-conn = pyodbc.connect('DRIVER={ODBC Driver 18 for SQL Server};SERVER=200.187.69.101;DATABASE=AmbarZoomBrinquedos;UID=zoombrinquedos;PWD=zoombrinquedos@2024;Timeout=10;TrustServerCertificate=yes')
+conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=200.187.69.101;DATABASE=AmbarZoomBrinquedos;UID=zoombrinquedos;PWD=zoombrinquedos@2024;Timeout=10;TrustServerCertificate=yes')
 tokens = enrich_ml_api.get_ml_tokens(conn)
 token = tokens.get('3')
 headers = {'Authorization': f'Bearer {token}'}
