@@ -1,4 +1,4 @@
-
+﻿
 import React, {useEffect, useState, useMemo} from 'react';
 import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
@@ -49,6 +49,7 @@ function Resultados() {
     const [ordenacao, setOrdenacao] = useState('pedidos');
     const [filtroRank, setFiltroRank] = useState(null); // {tipo:'marca',valor:'PARAMOUNT'}
     const [filtroMarketplace, setFiltroMarketplace] = useState(null); // 'MERCADO LIVRE', 'SHOPEE', etc
+    const [expandedMkp, setExpandedMkp] = useState({});
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -1026,9 +1027,11 @@ function Resultados() {
                             <div style={{display: 'flex', gap: '8px', marginBottom: '10px', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
                                 {(() => {
                                     const mkpCounts = {};
+                                    const mkpLucros = {};
                                     dadosProcessados.forEach(d => {
                                         const v = (d.vendedor || '').trim();
                                         mkpCounts[v] = (mkpCounts[v] || 0) + 1;
+                                        mkpLucros[v] = (mkpLucros[v] || 0) + (d.lucro || 0);
                                     });
                                     const mkpConfig = [
                                         { key: 'MERCADO LIVRE', label: 'ML', emoji: '🟡', bg: 'rgba(255,230,0,0.08)', border: 'rgba(255,230,0,0.35)', color: '#ffe600' },
@@ -1037,18 +1040,44 @@ function Resultados() {
                                         { key: 'TIKTOK', label: 'TikTok', emoji: '⚫', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.2)', color: '#fff' },
                                     ];
                                     return mkpConfig.filter(m => mkpCounts[m.key]).map(m => (
-                                        <div key={m.key}
-                                            onClick={() => filtroMarketplace === m.key ? setFiltroMarketplace(null) : setFiltroMarketplace(m.key)}
-                                            style={{
+                                        <div key={m.key} style={{position: 'relative', flex: '1', minWidth: '70px', display: 'flex', flexDirection: 'column'}}>
+                                            <div
+                                                onClick={() => filtroMarketplace === m.key ? setFiltroMarketplace(null) : setFiltroMarketplace(m.key)}
+                                                style={{
+                                                    
                                                 flex: '1', minWidth: '70px', padding: '10px 8px', borderRadius: '14px',
                                                 background: filtroMarketplace === m.key ? m.bg.replace(/[\d.]+\)$/, '0.2)') : m.bg,
                                                 border: `1.5px solid ${filtroMarketplace === m.key ? m.color : m.border}`,
                                                 textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
                                                 boxShadow: filtroMarketplace === m.key ? `0 0 14px ${m.border}` : 'none',
                                                 transform: filtroMarketplace === m.key ? 'scale(1.03)' : 'scale(1)',
-                                            }}>
-                                            <div style={{fontSize: '11px', fontWeight: 600, color: 'var(--soft)', marginBottom: '2px'}}>{m.emoji} {m.label}</div>
-                                            <div style={{fontSize: '20px', fontWeight: 800, color: m.color}}>{mkpCounts[m.key]}</div>
+                                            
+                                                }}>
+                                                <div style={{fontSize: '11px', fontWeight: 600, color: 'var(--soft)', marginBottom: '2px'}}>{m.emoji} {m.label}</div>
+                                                <div style={{fontSize: '20px', fontWeight: 800, color: m.color}}>{mkpCounts[m.key]}</div>
+                                            </div>
+                                            <div 
+                                                onClick={(e) => { e.stopPropagation(); setExpandedMkp(prev => ({...prev, [m.key]: !prev[m.key]})) }}
+                                                style={{
+                                                    position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)',
+                                                    background: '#1a1c23', border: `1px solid ${m.border}`, borderRadius: '10px',
+                                                    padding: '2px 14px', fontSize: '9px', cursor: 'pointer', zIndex: 2,
+                                                    color: 'var(--soft)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                                }}>
+                                                {expandedMkp[m.key] ? '▲' : '▼'}
+                                            </div>
+                                            {expandedMkp[m.key] && (
+                                                <div style={{
+                                                    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                                                    marginTop: '12px', background: 'rgba(20, 22, 28, 0.98)', border: `1px solid ${m.border}`,
+                                                    borderRadius: '8px', padding: '8px 12px', zIndex: 10,
+                                                    boxShadow: '0 4px 16px rgba(0,0,0,0.6)', whiteSpace: 'nowrap',
+                                                    fontSize: '13px', color: '#fff', textAlign: 'center'
+                                                }}>
+                                                    Lucro: <b style={{color: mkpLucros[m.key] >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {mkpLucros[m.key] ? mkpLucros[m.key].toFixed(2) : '0.00'}</b>
+                                                </div>
+                                            )}
                                         </div>
                                     ));
                                 })()}
@@ -1302,5 +1331,7 @@ export default Resultados;
 
 
 
-/ /   F o r c e   R e n d e r   R e d e p l o y  
+/ /   F o r c e   R e n d e r   R e d e p l o y 
  
+ 
+
