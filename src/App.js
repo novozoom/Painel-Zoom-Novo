@@ -1,4 +1,4 @@
-﻿
+
 import React, {useEffect, useState, useMemo} from 'react';
 import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
@@ -50,6 +50,7 @@ function Resultados() {
     const [filtroRank, setFiltroRank] = useState(null); // {tipo:'marca',valor:'PARAMOUNT'}
     const [filtroMarketplace, setFiltroMarketplace] = useState(null); // 'MERCADO LIVRE', 'SHOPEE', etc
     const [expandedMkp, setExpandedMkp] = useState({});
+    const [expandedMarketRows, setExpandedMarketRows] = useState({});
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -362,11 +363,12 @@ function Resultados() {
     const desempenhoDia = dadosOntem > 0 ? (((faturamentoDeHoje - dadosOntem) / dadosOntem) * 100) : 0;
 
     // Marketplace Data
-    const mercadoLivre = fornecedoresAgrupados.find(f => f.nome === 'MERCADO LIVRE') || {pedidos: 0, faturamento: 0};
-    const shopee = fornecedoresAgrupados.find(f => f.nome === 'SHOPEE') || {pedidos: 0, faturamento: 0};
-    const magalu = fornecedoresAgrupados.find(f => f.nome === 'MAGAZINE LUIZA') || {pedidos: 0, faturamento: 0};
+    const mercadoLivre = fornecedoresAgrupados.find(f => f.nome === 'MERCADO LIVRE') || {pedidos: 0, faturamento: 0, lucro: 0};
+    const shopee = fornecedoresAgrupados.find(f => f.nome === 'SHOPEE') || {pedidos: 0, faturamento: 0, lucro: 0};
+    const magalu = fornecedoresAgrupados.find(f => f.nome === 'MAGAZINE LUIZA') || {pedidos: 0, faturamento: 0, lucro: 0};
     const outrosFaturamento = fornecedoresAgrupados.filter(f => !['MERCADO LIVRE', 'SHOPEE', 'MAGAZINE LUIZA'].includes(f.nome)).reduce((sum, f) => sum + f.faturamento, 0);
     const outrosPedidos = fornecedoresAgrupados.filter(f => !['MERCADO LIVRE', 'SHOPEE', 'MAGAZINE LUIZA'].includes(f.nome)).reduce((sum, f) => sum + f.pedidos, 0);
+    const outrosLucro = fornecedoresAgrupados.filter(f => !['MERCADO LIVRE', 'SHOPEE', 'MAGAZINE LUIZA'].includes(f.nome)).reduce((sum, f) => sum + (f.lucro || 0), 0);
     const totalMarketplacesFat = faturamentoDeHoje || 1;
 
     // Full data
@@ -782,25 +784,61 @@ function Resultados() {
                             </div>
                             
                             <section className="infocard market">
-                                <div className="market-row">
-                                    <b>Mercado Livre</b>
-                                    <div className="track"><i className="mlbar" style={{width: `${(mercadoLivre.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                    <span>{mercadoLivre.pedidos}</span>
+                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, ml: !prev.ml}))}>
+                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
+                                        <b>Mercado Livre</b>
+                                        <div className="track"><i className="mlbar" style={{width: `${(mercadoLivre.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                        <span>{mercadoLivre.pedidos}</span>
+                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.ml ? '▲' : '▼'}</span>
+                                    </div>
+                                    {expandedMarketRows.ml && (
+                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #ffe600', display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>Lucro do dia:</span>
+                                            <b style={{color: (mercadoLivre.lucro || 0) >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {(mercadoLivre.lucro || 0).toFixed(2)}</b>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="market-row">
-                                    <b>Shopee</b>
-                                    <div className="track"><i className="shopeebar" style={{width: `${(shopee.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                    <span>{shopee.pedidos}</span>
+                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, shopee: !prev.shopee}))}>
+                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
+                                        <b>Shopee</b>
+                                        <div className="track"><i className="shopeebar" style={{width: `${(shopee.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                        <span>{shopee.pedidos}</span>
+                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.shopee ? '▲' : '▼'}</span>
+                                    </div>
+                                    {expandedMarketRows.shopee && (
+                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #ff5a00', display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>Lucro do dia:</span>
+                                            <b style={{color: (shopee.lucro || 0) >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {(shopee.lucro || 0).toFixed(2)}</b>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="market-row">
-                                    <b>Magalu</b>
-                                    <div className="track"><i className="magalubar" style={{width: `${(magalu.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                    <span>{magalu.pedidos}</span>
+                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, magalu: !prev.magalu}))}>
+                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
+                                        <b>Magalu</b>
+                                        <div className="track"><i className="magalubar" style={{width: `${(magalu.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                        <span>{magalu.pedidos}</span>
+                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.magalu ? '▲' : '▼'}</span>
+                                    </div>
+                                    {expandedMarketRows.magalu && (
+                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #1d7bff', display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>Lucro do dia:</span>
+                                            <b style={{color: (magalu.lucro || 0) >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {(magalu.lucro || 0).toFixed(2)}</b>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="market-row">
-                                    <b>Outros</b>
-                                    <div className="track"><i className="outrosbar" style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                    <span>{outrosPedidos}</span>
+                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, outros: !prev.outros}))}>
+                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
+                                        <b>Outros</b>
+                                        <div className="track"><i className="outrosbar" style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                        <span>{outrosPedidos}</span>
+                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.outros ? '▲' : '▼'}</span>
+                                    </div>
+                                    {expandedMarketRows.outros && (
+                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #8b8e96', display: 'flex', justifyContent: 'space-between'}}>
+                                            <span>Lucro do dia:</span>
+                                            <b style={{color: outrosLucro >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {outrosLucro.toFixed(2)}</b>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
