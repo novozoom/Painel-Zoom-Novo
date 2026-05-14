@@ -182,57 +182,101 @@ function Resultados() {
         document.body.removeChild(link);
     };
 
-    const syncEBuscar = async () => {
+    // Processa dados brutos e retorna {dados, pedidos, faturamento}
+    const processarDadosBrutos = (dadosBrutos) => {
+        const dadosFiltrados = dadosBrutos.filter(dado => dado.posicao.trim() !== "CANCELADO" && dado.posicao.trim() !== "CANCELADO        ");
+        const pedidosUnicos = new Set();
+        const dadosSemDuplicatas = [];
+        let somaValoresUnicos = 0;
+        dadosFiltrados.forEach(dado => {
+            if (!pedidosUnicos.has(dado.pedido_id)) {
+                pedidosUnicos.add(dado.pedido_id);
+                dadosSemDuplicatas.push(dado);
+                somaValoresUnicos += dado.total_pedido;
+            } else {
+                const existente = dadosSemDuplicatas.find(item => item.sku === dado.sku && item.pedido_id === dado.pedido_id);
+                if (!existente) {
+                    dadosSemDuplicatas.push(dado);
+                    somaValoresUnicos += dado.total_pedido;
+                }
+            }
+        });
+        return { dados: dadosSemDuplicatas, pedidos: pedidosUnicos.size, faturamento: somaValoresUnicos };
+    };
+
+    const syncEBuscar = async (isBackground = false) => {
         try {
             const dataInicioStr = format(startDate, 'yyyy-MM-dd');
             const dataFimStr = format(endDate, 'yyyy-MM-dd');
-            
-            // Dispara o sync na nuvem silenciosamente
-            try {
-                await axios.post(`https://painel-zoom-novo.onrender.com/api/sync`, {
-                    data_inicio: dataInicioStr,
-                    data_fim: dataFimStr
-                });
-            } catch(e) { console.log('Erro no sync, buscando o que ja tem:', e); }
+            const cacheKey = `cache_${dataInicioStr}_${dataFimStr}`;
 
-            const url = `https://painel-zoom-novo.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
-            const respostaDados = await axios.get(url);
-            const dadosFiltrados = respostaDados.data.filter(dado => dado.posicao.trim() !== "CANCELADO" && dado.posicao.trim() !== "CANCELADO        ");
-
-            const pedidosUnicos = new Set();
-            const dadosSemDuplicatas = [];
-            let somaValoresUnicos = 0;
-
-            dadosFiltrados.forEach(dado => {
-                if (!pedidosUnicos.has(dado.pedido_id)) {
-                    pedidosUnicos.add(dado.pedido_id);
-                    dadosSemDuplicatas.push(dado);
-                    somaValoresUnicos += dado.total_pedido;
-                } else {
-                    // No novo motor o ID do produto é o sku
-                    const existente = dadosSemDuplicatas.find(item => item.sku === dado.sku && item.pedido_id === dado.pedido_id);
-                    if (!existente) {
-                        dadosSemDuplicatas.push(dado);
-                        somaValoresUnicos += dado.total_pedido;
+            // 1) CACHE-FIRST: Mostra dados do cache instantaneamente
+            if (!isBackground) {
+                try {
+                    const cached = localStorage.getItem(cacheKey);
+                    if (cached) {
+                        const { dados: cachedDados, pedidos: cachedPedidos, faturamento: cachedFat, timestamp } = JSON.parse(cached);
+                        // Usa cache se tiver menos de 30 min
+                        if (Date.now() - timestamp < 30 * 60 * 1000) {
+                            inserirDados(cachedDados);
+                            setNumeroDePedidosUnicos(cachedPedidos);
+                            setFaturamentoDeHoje(cachedFat);
+                            setIsLoading(false);
+                        }
                     }
-                }
-            });
-            inserirDados(dadosSemDuplicatas);
-            setNumeroDePedidosUnicos(pedidosUnicos.size);
-            setFaturamentoDeHoje(somaValoresUnicos);
+                } catch(e) { /* cache inválido, ignora */ }
+            }
+
+            // 2) FETCH SEM ESPERAR SYNC - busca dados existentes primeiro
+            const url = `https://painel-zoom-novo.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
+            const respostaDados = await axios.get(url, { timeout: 15000 });
+            const resultado = processarDadosBrutos(respostaDados.data);
+
+            inserirDados(resultado.dados);
+            setNumeroDePedidosUnicos(resultado.pedidos);
+            setFaturamentoDeHoje(resultado.faturamento);
             setIsLoading(false);
+
+            // Salva no cache
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({ ...resultado, timestamp: Date.now() }));
+            } catch(e) { /* localStorage cheio */ }
+
+            // 3) SYNC EM BACKGROUND - não bloqueia a tela
+            axios.post(`https://painel-zoom-novo.onrender.com/api/sync`, {
+                data_inicio: dataInicioStr, data_fim: dataFimStr
+            }).then(async () => {
+                // Após sync, busca dados atualizados silenciosamente
+                try {
+                    const fresh = await axios.get(url, { timeout: 15000 });
+                    const res2 = processarDadosBrutos(fresh.data);
+                    inserirDados(res2.dados);
+                    setNumeroDePedidosUnicos(res2.pedidos);
+                    setFaturamentoDeHoje(res2.faturamento);
+                    localStorage.setItem(cacheKey, JSON.stringify({ ...res2, timestamp: Date.now() }));
+                } catch(e) {}
+            }).catch(e => console.log('Sync background:', e.message));
+
         } catch (error) {
             console.error(error);
             setIsLoading(false);
         }
     };
 
+    // Keep-alive: pinga o backend a cada 4 min para evitar cold start do Render
+    useEffect(() => {
+        const ping = () => axios.get('https://painel-zoom-novo.onrender.com/', { timeout: 5000 }).catch(() => {});
+        ping();
+        const keepAlive = setInterval(ping, 4 * 60 * 1000);
+        return () => clearInterval(keepAlive);
+    }, []);
+
     useEffect(() => {
         setIsLoading(true);
         syncEBuscar();
 
         // Recarrega silenciosamente a cada 2 min
-        const tempoDeAtualizacao = setInterval(syncEBuscar, 120000);
+        const tempoDeAtualizacao = setInterval(() => syncEBuscar(true), 120000);
         return () => clearInterval(tempoDeAtualizacao);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startDate, endDate]);
