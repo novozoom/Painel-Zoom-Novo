@@ -857,61 +857,25 @@ function Resultados() {
                             </div>
                             
                             <section className="infocard market">
-                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, ml: !prev.ml}))}>
-                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
-                                        <b>Mercado Livre</b>
-                                        <div className="track"><i className="mlbar" style={{width: `${(mercadoLivre.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                        <span>{mercadoLivre.pedidos}</span>
-                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.ml ? '▲' : '▼'}</span>
-                                    </div>
-                                    {expandedMarketRows.ml && (
-                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #ffe600', display: 'flex', justifyContent: 'space-between'}}>
-                                            <span>Lucro do dia:</span>
-                                            <b style={{color: (mercadoLivre.lucro || 0) >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {(mercadoLivre.lucro || 0).toFixed(2)}</b>
-                                        </div>
-                                    )}
+                                <div className="market-row">
+                                    <b>Mercado Livre</b>
+                                    <div className="track"><i className="mlbar" style={{width: `${(mercadoLivre.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{mercadoLivre.pedidos}</span>
                                 </div>
-                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, shopee: !prev.shopee}))}>
-                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
-                                        <b>Shopee</b>
-                                        <div className="track"><i className="shopeebar" style={{width: `${(shopee.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                        <span>{shopee.pedidos}</span>
-                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.shopee ? '▲' : '▼'}</span>
-                                    </div>
-                                    {expandedMarketRows.shopee && (
-                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #ff5a00', display: 'flex', justifyContent: 'space-between'}}>
-                                            <span>Lucro do dia:</span>
-                                            <b style={{color: (shopee.lucro || 0) >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {(shopee.lucro || 0).toFixed(2)}</b>
-                                        </div>
-                                    )}
+                                <div className="market-row">
+                                    <b>Shopee</b>
+                                    <div className="track"><i className="shopeebar" style={{width: `${(shopee.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{shopee.pedidos}</span>
                                 </div>
-                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, magalu: !prev.magalu}))}>
-                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
-                                        <b>Magalu</b>
-                                        <div className="track"><i className="magalubar" style={{width: `${(magalu.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                        <span>{magalu.pedidos}</span>
-                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.magalu ? '▲' : '▼'}</span>
-                                    </div>
-                                    {expandedMarketRows.magalu && (
-                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #1d7bff', display: 'flex', justifyContent: 'space-between'}}>
-                                            <span>Lucro do dia:</span>
-                                            <b style={{color: (magalu.lucro || 0) >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {(magalu.lucro || 0).toFixed(2)}</b>
-                                        </div>
-                                    )}
+                                <div className="market-row">
+                                    <b>Magalu</b>
+                                    <div className="track"><i className="magalubar" style={{width: `${(magalu.faturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{magalu.pedidos}</span>
                                 </div>
-                                <div className="market-row" style={{flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer'}} onClick={() => setExpandedMarketRows(prev => ({...prev, outros: !prev.outros}))}>
-                                    <div style={{display: 'flex', alignItems: 'center', width: '100%'}}>
-                                        <b>Outros</b>
-                                        <div className="track"><i className="outrosbar" style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`}}></i></div>
-                                        <span>{outrosPedidos}</span>
-                                        <span style={{marginLeft: '12px', opacity: 0.5, fontSize: '10px'}}>{expandedMarketRows.outros ? '▲' : '▼'}</span>
-                                    </div>
-                                    {expandedMarketRows.outros && (
-                                        <div style={{marginTop: '12px', fontSize: '13px', color: 'var(--soft)', textAlign: 'left', paddingLeft: '8px', borderLeft: '2px solid #8b8e96', display: 'flex', justifyContent: 'space-between'}}>
-                                            <span>Lucro do dia:</span>
-                                            <b style={{color: outrosLucro >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {outrosLucro.toFixed(2)}</b>
-                                        </div>
-                                    )}
+                                <div className="market-row">
+                                    <b>Outros</b>
+                                    <div className="track"><i className="outrosbar" style={{width: `${(outrosFaturamento/totalMarketplacesFat)*100}%`}}></i></div>
+                                    <span>{outrosPedidos}</span>
                                 </div>
                             </section>
 
@@ -1307,7 +1271,7 @@ function Resultados() {
                                     const v = (item.vendedor || '').trim();
                                     const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
                                     return (
-                                        <article className={`product-row ${borderClass}`} key={index}>
+                                        <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
                                             <div className="product-photo">
                                                 {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
                                                     <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
