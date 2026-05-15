@@ -79,22 +79,24 @@ function Resultados() {
     // Funcoes de calculo
     const calcularTaxaFixa = (tarifa, mlcustoadicional, unidade, shein) => {
         switch (tarifa) {
-            case 20: case 11: case 13: case 12: case 21: case 27: return 5 * unidade;
+            case 20: case 11: case 13: case 12: case 21: case 27: case 34: case 40: return 5 * unidade; // Shopee
             case 1: case 25: return shein * unidade;
-            case 6: case 5: case 3: case 4: case 2: return 0 * unidade;
-            case 9: case 19: case 10: case 24: return 5;
+            case 6: case 5: case 3: case 4: case 2: case 36: case 37: return 0 * unidade; // ML (sem taxa fixa)
+            case 9: case 19: case 10: case 24: return 5; // Magalu
             case 8: case 29: return 5 * unidade;
+            case 42: return 4 * unidade; // TikTok (~R$4 por item)
             default: return 0 * unidade;
         }
     };
 
     function CalcularTarifaDeVenda(origem, total, sku) {
         switch (origem) {
-            case 20: case 11: case 13: case 12: case 21: case 27: return parseFloat((total * 0.20).toFixed(2));
+            case 20: case 11: case 13: case 12: case 21: case 27: case 34: case 40: return parseFloat((total * 0.20).toFixed(2)); // Shopee 20%
             case 25: return parseFloat((total * 0.16).toFixed(2));
-            case 6: case 5: case 3: case 4: case 2: var dado = sku / 100; return parseFloat((total * dado).toFixed(2));
-            case 9: case 19: case 10: case 24: return parseFloat((total * 0.18).toFixed(2));
+            case 6: case 5: case 3: case 4: case 2: case 36: case 37: var dado = sku / 100; return parseFloat((total * dado).toFixed(2)); // ML usa comissao_sku
+            case 9: case 19: case 10: case 24: return parseFloat((total * 0.18).toFixed(2)); // Magalu 18%
             case 8: case 29: return parseFloat((total * 0.19).toFixed(2));
+            case 42: return parseFloat((total * 0.06).toFixed(2)); // TikTok ~6%
             default: return 0;
         }
     }
@@ -106,11 +108,12 @@ function Resultados() {
 
     function CalcularFrete(freteReal, FreteComprador, origem, quant) {
         switch (origem) {
-            case 20: case 11: case 13: case 12: case 21: case 27: return 0;
+            case 20: case 11: case 13: case 12: case 21: case 27: case 34: case 40: return 0; // Shopee absorve
             case 25: return 0;
-            case 6: case 5: case 3: case 4: case 2: return (freteReal - FreteComprador) / quant;
-            case 9: case 19: case 10: case 24: return 0;
+            case 6: case 5: case 3: case 4: case 2: case 36: case 37: return (freteReal - FreteComprador) / quant; // ML
+            case 9: case 19: case 10: case 24: return 0; // Magalu
             case 8: case 29: return 0;
+            case 42: return 0; // TikTok subsidiado
             default: return 0;
         }
     }
