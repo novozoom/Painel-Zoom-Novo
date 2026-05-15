@@ -51,6 +51,7 @@ function Resultados() {
     const [filtroMarketplace, setFiltroMarketplace] = useState(null); // 'MERCADO LIVRE', 'SHOPEE', etc
     const [expandedMkp, setExpandedMkp] = useState({});
     const [expandedMarketRows, setExpandedMarketRows] = useState({});
+    const [filtroFullConta, setFiltroFullConta] = useState(null);
     const setDateRange = (rangeType) => {
         const hoje = new Date();
         setIsLoading(true);
@@ -771,12 +772,53 @@ function Resultados() {
                                             </div>
                                         </>
                                     );
+                                } else if (filtroRank.tipo === 'conta') {
+                                    // Para Conta: mostrar pedidos individuais como na aba Pedidos
+                                    const pedidosFiltrados = dadosProcessados.filter(item => (item.origem_nome || '').trim() === filtroRank.valor.trim());
+                                    return (
+                                        <>
+                                            <div className="section" id="filtro-rank-detail">
+                                                <h2>📋 {filtroRank.valor} ({pedidosFiltrados.length} pedidos)</h2>
+                                                <button className="close-filter" onClick={() => setFiltroRank(null)}>✕ Fechar</button>
+                                            </div>
+                                            <div className="orders-list">
+                                                {pedidosFiltrados.map((item, index) => {
+                                                    const v = (item.vendedor || '').trim();
+                                                    const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                                    return (
+                                                        <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
+                                                            <div className="product-photo">
+                                                                {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                                    <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" loading="lazy" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                                ) : '📦'}
+                                                            </div>
+                                                            <div className="product-info">
+                                                                <h3>{item.titulo || 'Produto'}</h3>
+                                                                <div className="tags">
+                                                                    <span className="tag quant">{item.quant_itens} UND.</span>
+                                                                    <span className="tag origin">{(item.origem_nome || '').trim()}</span>
+                                                                    {item.full_status === 'TRUE' && <span className="tag full">⚡ FULL</span>}
+                                                                    <span className="tag pid">ERP: {item.pedido_id}</span>
+                                                                </div>
+                                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDeVenda.toFixed(2)}</p>
+                                                                <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno} | Ref: {item.sku}</p>
+                                                            </div>
+                                                            <div className="product-profit">
+                                                                <span className="pedido-total">R$ {item.valorDeVenda.toFixed(2)}</span>
+                                                                <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                                <span style={{color: getMarginColor(item.margemLucro)}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                            </div>
+                                                        </article>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    );
                                 } else {
-                                    // Para Marca, Grupo ou Conta: Agrupar por produto
+                                    // Para Marca, Grupo: Agrupar por produto
                                     const pedidosFiltrados = dadosProcessados.filter(item => {
                                         if (filtroRank.tipo === 'marca') return (item.marca || '').trim() === filtroRank.valor.trim();
                                         if (filtroRank.tipo === 'grupo') return (item.grupo || '').trim() === filtroRank.valor.trim();
-                                        if (filtroRank.tipo === 'conta') return (item.origem_nome || '').trim() === filtroRank.valor.trim();
                                         return false;
                                     });
 
@@ -1259,44 +1301,63 @@ function Resultados() {
                     {abaPrincipal === 'full' && (
                         <div className="page-content pedidos-view">
                             <div className="section" style={{marginTop:'0'}}>
-                                <h2>📦 Vendas Full ({fullData.total} pedidos)</h2>
+                                <h2>⚡ Vendas Full ({fullData.total} pedidos)</h2>
                             </div>
-                            <div className="full-summary" style={{marginBottom:'14px'}}>
-                                <div className="full-chip ml">🟡 ML <b>{fullData.ml}</b></div>
-                                <div className="full-chip sh">🟠 Shopee <b>{fullData.sh}</b></div>
-                                <div className="full-chip mg">🔵 Magalu <b>{fullData.mg}</b></div>
-                            </div>
-                            <div className="orders-list">
-                                {fullData.items.map((item, index) => {
-                                    const v = (item.vendedor || '').trim();
-                                    const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                            <div className="full-summary" style={{marginBottom:'10px', flexWrap:'wrap', gap:'6px'}}>
+                                {fullData.contas.map((conta, i) => {
+                                    const isActive = filtroFullConta === conta.nome;
                                     return (
-                                        <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
-                                            <div className="product-photo">
-                                                {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
-                                                    <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
-                                                ) : '📦'}
-                                            </div>
-                                            <div className="product-info">
-                                                <h3>{item.titulo || 'Produto'}</h3>
-                                                <div className="tags">
-                                                    <span className="tag quant">{item.quant_itens} UND.</span>
-                                                    <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
-                                                    <span className="tag full">⚡ FULL</span>
-                                                    <span className="tag pid">ERP: {item.pedido_id}</span>{item.integracao && <span className="tag pid" style={{background: 'rgba(255,255,255,0.1)'}}>ID: {item.integracao}</span>}
-                                                </div>
-                                                <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDeVenda.toFixed(2)}</p>
-                                                <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno}</p>
-                                            </div>
-                                            <div className="product-profit">
-                                                <span className="pedido-total">R$ {item.total_pedido.toFixed(2)}</span>
-                                                <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
-                                                <span style={{color: item.lucro > 0 ? '#c5c7ce' : 'var(--red)'}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
-                                            </div>
-                                        </article>
+                                        <div key={i} className={`full-chip ${isActive ? 'active' : ''}`} style={{cursor:'pointer', border: isActive ? '1px solid var(--green)' : '1px solid rgba(255,255,255,.12)', opacity: filtroFullConta && !isActive ? 0.4 : 1}} onClick={() => setFiltroFullConta(isActive ? null : conta.nome)}>
+                                            <b style={{fontSize:'11px'}}>{conta.nome.replace('ML ','').replace('SHOPEE ','SH ')}</b>
+                                            <span style={{marginLeft:'4px', fontSize:'12px', color:'var(--green)'}}>{conta.pedidos}</span>
+                                        </div>
                                     );
                                 })}
                             </div>
+                            {(() => {
+                                const itemsFiltrados = filtroFullConta ? fullData.items.filter(d => (d.origem_nome || '').trim() === filtroFullConta) : fullData.items;
+                                const fatTotal = itemsFiltrados.reduce((s,d) => s + d.valorDeVenda, 0);
+                                const lucroTotal = itemsFiltrados.reduce((s,d) => s + d.lucro, 0);
+                                return (
+                                    <>
+                                        <div style={{background:'rgba(255,255,255,.04)', borderRadius:'12px', padding:'10px 14px', marginBottom:'14px', display:'flex', justifyContent:'space-between', fontSize:'13px'}}>
+                                            <span>Faturamento: <b>R$ {fatTotal.toFixed(2)}</b></span>
+                                            <span>Lucro: <b style={{color: lucroTotal >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {lucroTotal.toFixed(2)}</b></span>
+                                        </div>
+                                        <div className="orders-list">
+                                            {itemsFiltrados.map((item, index) => {
+                                                const v = (item.vendedor || '').trim();
+                                                const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
+                                                return (
+                                                    <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
+                                                        <div className="product-photo">
+                                                            {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
+                                                                <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" loading="lazy" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                            ) : '📦'}
+                                                        </div>
+                                                        <div className="product-info">
+                                                            <h3>{item.titulo || 'Produto'}</h3>
+                                                            <div className="tags">
+                                                                <span className="tag quant">{item.quant_itens} UND.</span>
+                                                                <span className="tag origin">{item.origem_nome ? item.origem_nome.trim() : item.vendedor}</span>
+                                                                <span className="tag full">⚡ FULL</span>
+                                                                <span className="tag pid">ERP: {item.pedido_id}</span>
+                                                            </div>
+                                                            <p>Custo R$ {item.custoProduto.toFixed(2)} · Frete R$ {item.frete.toFixed(2)} · Taxa R$ {item.taxaFixa.toFixed(2)} · Comissão R$ {item.tarifaDeVenda.toFixed(2)}</p>
+                                                            <p style={{marginTop: '2px', color: '#8b8e96', fontSize: '11px'}}>SKU: {item.cod_interno}</p>
+                                                        </div>
+                                                        <div className="product-profit">
+                                                            <span className="pedido-total">R$ {item.valorDeVenda.toFixed(2)}</span>
+                                                            <b style={{color: item.lucro > 0 ? 'var(--green)' : 'var(--red)'}}>R$ {item.lucro.toFixed(2)}</b>
+                                                            <span style={{color: getMarginColor(item.margemLucro)}}>{isFinite(item.margemLucro) ? item.margemLucro.toFixed(1) : 0}%</span>
+                                                        </div>
+                                                    </article>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     )}
 
