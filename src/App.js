@@ -242,19 +242,9 @@ function Resultados() {
                 localStorage.setItem(cacheKey, JSON.stringify({ ...resultado, timestamp: Date.now() }));
             } catch(e) { /* localStorage cheio */ }
 
-            // 3) SYNC EM BACKGROUND - não bloqueia a tela
+            // 3) SYNC EM BACKGROUND - dispara e esquece (não refaz fetch)
             axios.post(`https://painel-zoom-novo.onrender.com/api/sync`, {
                 data_inicio: dataInicioStr, data_fim: dataFimStr
-            }).then(async () => {
-                // Após sync, busca dados atualizados silenciosamente
-                try {
-                    const fresh = await axios.get(url, { timeout: 15000 });
-                    const res2 = processarDadosBrutos(fresh.data);
-                    inserirDados(res2.dados);
-                    setNumeroDePedidosUnicos(res2.pedidos);
-                    setFaturamentoDeHoje(res2.faturamento);
-                    localStorage.setItem(cacheKey, JSON.stringify({ ...res2, timestamp: Date.now() }));
-                } catch(e) {}
             }).catch(e => console.log('Sync background:', e.message));
 
         } catch (error) {
@@ -275,8 +265,8 @@ function Resultados() {
         setIsLoading(true);
         syncEBuscar();
 
-        // Recarrega silenciosamente a cada 2 min
-        const tempoDeAtualizacao = setInterval(() => syncEBuscar(true), 120000);
+        // Recarrega silenciosamente a cada 5 min
+        const tempoDeAtualizacao = setInterval(() => syncEBuscar(true), 300000);
         return () => clearInterval(tempoDeAtualizacao);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startDate, endDate]);
@@ -386,8 +376,8 @@ function Resultados() {
         })).sort((a,b) => b.margem - a.margem);
     }, [dadosProcessados]);
 
-    const sortRanking = (arr) => {
-        const copy = [...arr];
+    const sortedProdutos = useMemo(() => {
+        const copy = [...produtosAgrupados];
         switch(ordenacao) {
             case 'pedidos': return copy.sort((a,b) => b.pedidos - a.pedidos);
             case 'lucro': return copy.sort((a,b) => b.lucro - a.lucro);
@@ -395,7 +385,43 @@ function Resultados() {
             case 'margem': return copy.sort((a,b) => b.margem - a.margem);
             default: return copy.sort((a,b) => b.pedidos - a.pedidos);
         }
-    };
+    }, [produtosAgrupados, ordenacao]);
+
+    const sortedMarcas = useMemo(() => {
+        const copy = [...marcasAgrupadas];
+        switch(ordenacao) {
+            case 'pedidos': return copy.sort((a,b) => b.pedidos - a.pedidos);
+            case 'lucro': return copy.sort((a,b) => b.lucro - a.lucro);
+            case 'faturamento': return copy.sort((a,b) => b.faturamento - a.faturamento);
+            case 'margem': return copy.sort((a,b) => b.margem - a.margem);
+            default: return copy.sort((a,b) => b.pedidos - a.pedidos);
+        }
+    }, [marcasAgrupadas, ordenacao]);
+
+    const sortedGrupos = useMemo(() => {
+        const copy = [...gruposAgrupados];
+        switch(ordenacao) {
+            case 'pedidos': return copy.sort((a,b) => b.pedidos - a.pedidos);
+            case 'lucro': return copy.sort((a,b) => b.lucro - a.lucro);
+            case 'faturamento': return copy.sort((a,b) => b.faturamento - a.faturamento);
+            case 'margem': return copy.sort((a,b) => b.margem - a.margem);
+            default: return copy.sort((a,b) => b.pedidos - a.pedidos);
+        }
+    }, [gruposAgrupados, ordenacao]);
+
+    // Pré-calcula contagem de pedidos (para carrinho) — evita recalcular no JSX
+    const pedidoCounts = useMemo(() => {
+        const counts = {};
+        dadosProcessados.forEach(d => { counts[d.pedido_id] = (counts[d.pedido_id] || 0) + 1; });
+        return counts;
+    }, [dadosProcessados]);
+
+    const carrinhoCount = useMemo(() => {
+        return Object.values(pedidoCounts).filter(c => c > 1).length;
+    }, [pedidoCounts]);
+
+    // Paginação de pedidos
+    const [pedidosPage, setPedidosPage] = useState(30);
 
     const prejuizos = useMemo(() => dadosProcessados.filter(d => d.lucro <= 0).sort((a,b) => a.lucro - b.lucro), [dadosProcessados]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -614,7 +640,7 @@ function Resultados() {
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'produtos' ? 'active' : ''}`}>
-                                    {sortRanking(produtosAgrupados).slice(0, rankLimit).map((prod, i) => (
+                                    {sortedProdutos.slice(0, rankLimit).map((prod, i) => (
                                         <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'sku',valor:prod.sku}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                             <div className="rank-photo-center">
                                                 {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
@@ -628,7 +654,7 @@ function Resultados() {
                                                     <p>SKU {prod.sku}</p>
                                                     <p className="rank-canal">{prod.origem.trim()}</p>
                                                 </div>
-                                                <div className="rmargin">{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
+                                                <div className="rmargin" style={{color: prod.margem < 0 ? 'var(--red)' : 'var(--green)'}}>{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
                                             </div>
                                             <div className="metrics breakdown">
                                                 <div><span>💰 Venda</span><b>R$ {prod.faturamento.toFixed(2)}</b></div>
@@ -636,7 +662,7 @@ function Resultados() {
                                                 <div><span>🏷️ Taxa</span><b style={{color:'#ff6b6b'}}>-R$ {prod.taxaFixa.toFixed(2)}</b></div>
                                                 <div><span>📊 Comissão</span><b style={{color:'#ff6b6b'}}>-R$ {prod.tarifaDeVenda.toFixed(2)}</b></div>
                                                 <div><span>🚚 Frete</span><b style={{color:'#ff6b6b'}}>-R$ {prod.frete.toFixed(2)}</b></div>
-                                                <div className="lucro-final"><span>✅ Lucro</span><b className={prod.lucro > 0 ? 'green' : 'red'}>R$ {prod.lucro.toFixed(2)}</b></div>
+                                                <div className={prod.lucro > 0 ? 'lucro-final' : 'lucro-final prejuizo-final'}><span>{prod.lucro > 0 ? '✅ Lucro' : '❌ Prejuízo'}</span><b className={prod.lucro > 0 ? 'green' : 'red'}>R$ {prod.lucro.toFixed(2)}</b></div>
                                             </div>
                                             <div className="metrics">
                                                 <div><span>Qtd</span><b>{prod.unidades} un.</b></div>
@@ -650,7 +676,7 @@ function Resultados() {
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'marcas' ? 'active' : ''}`}>
-                                    {sortRanking(marcasAgrupadas).slice(0, 10).map((marca, i) => (
+                                    {sortedMarcas.slice(0, 10).map((marca, i) => (
                                         <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'marca',valor:marca.nome}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                             <div className="rank-top">
                                                 <div className="medal">{i + 1}</div>
@@ -658,11 +684,11 @@ function Resultados() {
                                                     <h3>{marca.nome}</h3>
                                                     <p>{marca.skus} SKUs vendidos</p>
                                                 </div>
-                                                <div className="rmargin">{isFinite(marca.margem) ? marca.margem.toFixed(1) : 0}%</div>
+                                                <div className="rmargin" style={{color: marca.margem < 0 ? 'var(--red)' : 'var(--green)'}}>{isFinite(marca.margem) ? marca.margem.toFixed(1) : 0}%</div>
                                             </div>
                                             <div className="metrics">
                                                 <div><span>Faturou</span><b>R$ {marca.faturamento.toFixed(0)}</b></div>
-                                                <div><span>Lucro</span><b className="green">R$ {marca.lucro.toFixed(0)}</b></div>
+                                                <div><span>Lucro</span><b className={marca.lucro >= 0 ? 'green' : 'red'}>R$ {marca.lucro.toFixed(0)}</b></div>
                                                 <div><span>Pedidos</span><b>{marca.pedidos}</b></div>
                                             </div>
                                         </article>
@@ -670,7 +696,7 @@ function Resultados() {
                                 </div>
 
                                 <div className={`rank-list ${abaRanking === 'grupos' ? 'active' : ''}`}>
-                                    {sortRanking(gruposAgrupados).slice(0, 10).map((grupo, i) => (
+                                    {sortedGrupos.slice(0, 10).map((grupo, i) => (
                                         <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'grupo',valor:grupo.nome}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                             <div className="rank-top">
                                                 <div className="medal">{i + 1}</div>
@@ -678,11 +704,11 @@ function Resultados() {
                                                     <h3>{grupo.nome}</h3>
                                                     <p>{grupo.skus} SKUs vendidos</p>
                                                 </div>
-                                                <div className="rmargin">{isFinite(grupo.margem) ? grupo.margem.toFixed(1) : 0}%</div>
+                                                <div className="rmargin" style={{color: grupo.margem < 0 ? 'var(--red)' : 'var(--green)'}}>{isFinite(grupo.margem) ? grupo.margem.toFixed(1) : 0}%</div>
                                             </div>
                                             <div className="metrics">
                                                 <div><span>Faturou</span><b>R$ {grupo.faturamento.toFixed(0)}</b></div>
-                                                <div><span>Lucro</span><b className="green">R$ {grupo.lucro.toFixed(0)}</b></div>
+                                                <div><span>Lucro</span><b className={grupo.lucro >= 0 ? 'green' : 'red'}>R$ {grupo.lucro.toFixed(0)}</b></div>
                                                 <div><span>Pedidos</span><b>{grupo.pedidos}</b></div>
                                             </div>
                                         </article>
@@ -787,7 +813,7 @@ function Resultados() {
                                                 <button onClick={() => setFiltroRank(null)}>✕ Fechar</button>
                                             </div>
                                             <div className="rank-list active" style={{padding: '0 10px'}}>
-                                                {sortRanking(produtosDaCategoria).map((prod, i) => (
+                                                {produtosDaCategoria.sort((a,b) => b.margem - a.margem).map((prod, i) => (
                                                     <article className="rank" key={i} style={{cursor:'pointer'}} onClick={() => { setFiltroRank({tipo:'sku',valor:prod.sku}); setTimeout(() => { const el = document.getElementById('filtro-rank-detail'); if(el) el.scrollIntoView({behavior:'smooth'}); },100); }}>
                                                         <div className="rank-photo-center">
                                                             {prod.url_imagem && prod.url_imagem.trim() !== 'None' ? (
@@ -801,7 +827,7 @@ function Resultados() {
                                                                 <p>SKU {prod.sku}</p>
                                                                 <p className="rank-canal">{prod.origem.trim()}</p>
                                                             </div>
-                                                            <div className="rmargin">{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
+                                                            <div className="rmargin" style={{color: prod.margem < 0 ? 'var(--red)' : 'var(--green)'}}>{isFinite(prod.margem) ? prod.margem.toFixed(1) : 0}%</div>
                                                         </div>
                                                         <div className="metrics breakdown">
                                                             <div><span>💰 Venda</span><b>R$ {prod.faturamento.toFixed(2)}</b></div>
@@ -809,7 +835,7 @@ function Resultados() {
                                                             <div><span>🏷️ Taxa</span><b style={{color:'#ff6b6b'}}>-R$ {prod.taxaFixa.toFixed(2)}</b></div>
                                                             <div><span>📊 Comissão</span><b style={{color:'#ff6b6b'}}>-R$ {prod.tarifaDeVenda.toFixed(2)}</b></div>
                                                             <div><span>🚚 Frete</span><b style={{color:'#ff6b6b'}}>-R$ {prod.frete.toFixed(2)}</b></div>
-                                                            <div className="lucro-final"><span>✅ Lucro</span><b className={prod.lucro > 0 ? 'green' : 'red'}>R$ {prod.lucro.toFixed(2)}</b></div>
+                                                            <div className={prod.lucro > 0 ? 'lucro-final' : 'lucro-final prejuizo-final'}><span>{prod.lucro > 0 ? '✅ Lucro' : '❌ Prejuízo'}</span><b className={prod.lucro > 0 ? 'green' : 'red'}>R$ {prod.lucro.toFixed(2)}</b></div>
                                                         </div>
                                                         <div className="metrics">
                                                             <div><span>Qtd</span><b>{prod.unidades} un.</b></div>
@@ -1187,9 +1213,9 @@ function Resultados() {
                                         <p className="mc-val">{margensResumo.verde}</p>
                                         <p className="mc-label" style={{color: 'var(--green)'}}>&gt;20%</p>
                                     </div>
-                                    <div className={`margin-card mc-purple ${filtroRank?.tipo === 'carrinho' ? 'active' : ''}`} onClick={() => filtroRank?.tipo === 'carrinho' ? setFiltroRank(null) : setFiltroRank({tipo: 'carrinho', valor: 'carrinho', titulo: `${(() => { const cs = new Set(); dadosProcessados.forEach(d => { const pedidoCounts = {}; dadosProcessados.forEach(dd => { pedidoCounts[dd.pedido_id] = (pedidoCounts[dd.pedido_id] || 0) + 1; }); if(pedidoCounts[d.pedido_id] > 1) cs.add(d.pedido_id); }); return cs.size; })()} pedidos`})}>
+                                    <div className={`margin-card mc-purple ${filtroRank?.tipo === 'carrinho' ? 'active' : ''}`} onClick={() => filtroRank?.tipo === 'carrinho' ? setFiltroRank(null) : setFiltroRank({tipo: 'carrinho', valor: 'carrinho', titulo: `${carrinhoCount} pedidos`})}>
                                         <h4>🛒 Carrinho</h4>
-                                        <p className="mc-val">{(() => { const pedidoCounts = {}; dadosProcessados.forEach(d => { pedidoCounts[d.pedido_id] = (pedidoCounts[d.pedido_id] || 0) + 1; }); return Object.values(pedidoCounts).filter(c => c > 1).length; })()}</p>
+                                        <p className="mc-val">{carrinhoCount}</p>
                                         <p className="mc-label" style={{color: '#a855f7'}}>+1 item</p>
                                     </div>
                                 </div>
@@ -1197,11 +1223,6 @@ function Resultados() {
                             
                             <div className="orders-list">
                                 {(() => {
-                                    const pedidoCounts = {};
-                                    dadosProcessados.forEach(d => {
-                                        pedidoCounts[d.pedido_id] = (pedidoCounts[d.pedido_id] || 0) + 1;
-                                    });
-
                                     let pedidosAExibir = dadosProcessados;
 
                                     // Filtro marketplace (aplicado primeiro)
@@ -1216,13 +1237,15 @@ function Resultados() {
                                         pedidosAExibir = pedidosAExibir.filter(item => pedidoCounts[item.pedido_id] > 1);
                                     }
 
+                                    const pedidosVisiveis = pedidosAExibir.slice(0, pedidosPage);
+
                                     return (
                                         <>
                                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px', marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
                                                 <span style={{fontSize: '13px', color: 'var(--soft)'}}>{(filtroRank || filtroMarketplace) ? `${pedidosAExibir.length} pedidos filtrados` : `${pedidosAExibir.length} pedidos`}</span>
                                                 <button onClick={() => exportToXLSX(pedidosAExibir)} style={{background: 'rgba(21,216,255,0.1)', color: 'var(--cyan)', border: '1px solid var(--cyan)', padding: '6px 14px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold'}}>📥 Exportar CSV</button>
                                             </div>
-                                            {pedidosAExibir.map((item, index) => {
+                                            {pedidosVisiveis.map((item, index) => {
                                                 const v = (item.vendedor || '').trim();
                                                 const borderClass = v === 'MERCADO LIVRE' ? 'borda-ml' : v === 'SHOPEE' ? 'borda-sh' : v === 'MAGAZINE LUIZA' ? 'borda-mg' : v === 'TIKTOK' ? 'borda-tk' : 'borda-other';
                                                 const ehCarrinho = pedidoCounts[item.pedido_id] > 1;
@@ -1231,7 +1254,7 @@ function Resultados() {
                                             <article className={`product-row ${borderClass}`} key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
                                                 <div className="product-photo">
                                                     {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
-                                                        <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="produto" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                        <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="produto" loading="lazy" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
                                                     ) : '📦'}
                                                 </div>
                                                 <div className="product-info">
@@ -1256,6 +1279,9 @@ function Resultados() {
                                         </article>
                                     );
                                     })}
+                                            {pedidosPage < pedidosAExibir.length && (
+                                                <button className="load-more" onClick={() => setPedidosPage(prev => prev + 30)}>Carregar mais ({pedidosAExibir.length - pedidosPage} restantes)</button>
+                                            )}
                                         </>
                                     );
                                 })()}
@@ -1410,10 +1436,3 @@ function Resultados() {
 }
 
 export default Resultados;
-
-
-
-/ /   F o r c e   R e n d e r   R e d e p l o y 
- 
- 
-
