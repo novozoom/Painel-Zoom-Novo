@@ -314,6 +314,14 @@ function Resultados() {
         return dadosProcessados.reduce((acc, curr) => acc + curr.lucro, 0);
     }, [dadosProcessados]);
 
+    const lucroPositivoTotal = useMemo(() => {
+        return dadosProcessados.filter(d => d.lucro > 0).reduce((acc, curr) => acc + curr.lucro, 0);
+    }, [dadosProcessados]);
+
+    const prejuizoTotal = useMemo(() => {
+        return dadosProcessados.filter(d => d.lucro < 0).reduce((acc, curr) => acc + Math.abs(curr.lucro), 0);
+    }, [dadosProcessados]);
+
     const margensResumo = useMemo(() => {
         const resumo = { vermelho: 0, laranja: 0, amarelo: 0, verde: 0 };
         dadosProcessados.forEach(item => {
@@ -527,10 +535,11 @@ function Resultados() {
                                     Ontem fechou em R$ {dadosOntem.toFixed(0)} com {pedidosOntem} pedidos
                                 </div>
 
-                                <div className="hero-row">
-                                    <div className="mini"><span>Lucro</span><b>R$ {lucroLiquidoTotal.toFixed(0)}</b></div>
-                                    <div className="mini"><span>Margem</span><b className="green">{faturamentoDeHoje > 0 ? (lucroLiquidoTotal / faturamentoDeHoje * 100).toFixed(1) : 0}%</b></div>
-                                    <div className="mini"><span>Ticket</span><b>R$ {numeroDePedidosUnicos > 0 ? (faturamentoDeHoje / numeroDePedidosUnicos).toFixed(0) : 0}</b></div>
+                                <div className="hero-row" style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                                    <div className="mini" style={{flex: '1 1 20%'}}><span>Lucro (Positivo)</span><b className="green">R$ {lucroPositivoTotal.toFixed(0)}</b></div>
+                                    <div className="mini" style={{flex: '1 1 20%'}}><span>Prejuízo</span><b className="red">- R$ {prejuizoTotal.toFixed(0)}</b></div>
+                                    <div className="mini" style={{flex: '1 1 20%'}}><span>Margem Real</span><b className={lucroLiquidoTotal > 0 ? "green" : "red"}>{faturamentoDeHoje > 0 ? (lucroLiquidoTotal / faturamentoDeHoje * 100).toFixed(1) : 0}%</b></div>
+                                    <div className="mini" style={{flex: '1 1 20%'}}><span>Ticket</span><b>R$ {numeroDePedidosUnicos > 0 ? (faturamentoDeHoje / numeroDePedidosUnicos).toFixed(0) : 0}</b></div>
                                 </div>
 
                                 <div style={{textAlign: 'center', marginTop: '10px'}}>
@@ -1229,6 +1238,23 @@ function Resultados() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* VENDAS FULL CARD na aba de pedidos */}
+                            <div className="section" style={{marginTop:'16px', marginBottom: '10px'}}>
+                                <h2>⚡ Vendas Full ({fullData.total} pedidos)</h2>
+                            </div>
+                            <div className="full-summary" style={{marginBottom:'10px', flexWrap:'wrap', gap:'6px'}}>
+                                {fullData.contas.map((conta, i) => {
+                                    const isActive = filtroFullConta === conta.nome;
+                                    return (
+                                        <div key={i} className={`full-chip ${isActive ? 'active' : ''}`} style={{cursor:'pointer', border: isActive ? '1px solid var(--green)' : '1px solid rgba(255,255,255,.12)', opacity: filtroFullConta && !isActive ? 0.4 : 1}} onClick={() => setFiltroFullConta(isActive ? null : conta.nome)}>
+                                            <b style={{fontSize:'11px'}}>{conta.nome.replace('ML ','').replace('SHOPEE ','SH ')}</b>
+                                            <span style={{marginLeft:'4px', fontSize:'12px', color:'var(--green)'}}>{conta.pedidos}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
                             
                             <div className="orders-list">
                                 {(() => {
@@ -1244,6 +1270,11 @@ function Resultados() {
                                         pedidosAExibir = pedidosAExibir.filter(item => getMarginLevel(item.margemLucro) === filtroRank.valor);
                                     } else if (filtroRank && filtroRank.tipo === 'carrinho') {
                                         pedidosAExibir = pedidosAExibir.filter(item => pedidoCounts[item.pedido_id] > 1);
+                                    }
+
+                                    // Filtro Full Conta
+                                    if (filtroFullConta) {
+                                        pedidosAExibir = pedidosAExibir.filter(item => (item.origem_nome || '').trim() === filtroFullConta && item.full_status === 'TRUE');
                                     }
 
                                     const pedidosVisiveis = pedidosAExibir.slice(0, pedidosPage);
