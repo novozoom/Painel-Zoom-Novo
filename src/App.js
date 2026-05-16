@@ -1451,7 +1451,7 @@ function Resultados() {
                     {pedidoSelecionado && (() => {
                         const itensDoPedido = dadosProcessados.filter(d => d.pedido_id === pedidoSelecionado);
                         if (itensDoPedido.length === 0) return null;
-                        const totalPedidoVenda = itensDoPedido[0].total_pedido;
+                        const totalPedidoVenda = itensDoPedido.reduce((acc, curr) => acc + curr.valorDeVenda, 0);
                         const totalItensCusto = itensDoPedido.reduce((acc, curr) => acc + curr.custoProduto, 0);
                         const totalItensTaxa = itensDoPedido.reduce((acc, curr) => acc + curr.taxaFixa, 0);
                         const totalItensComissao = itensDoPedido.reduce((acc, curr) => acc + curr.tarifaDeVenda, 0);
