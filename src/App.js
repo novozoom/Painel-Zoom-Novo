@@ -1149,111 +1149,166 @@ function Resultados() {
                                 <h2>{filtroMarketplace ? `${filtroMarketplace}` : filtroRank && filtroRank.tipo === 'margem' ? `Pedidos: ${filtroRank.titulo}` : filtroRank && filtroRank.tipo === 'carrinho' ? `🛒 Pedidos Carrinho` : `Todos os ${dadosProcessados.length} pedidos`}</h2>
                             </div>
 
-                            {/* MARKETPLACE FILTER CHIPS */}
-                            <div style={{display: 'flex', gap: '8px', marginBottom: '10px', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
-                                {(() => {
-                                    const mkpCounts = {};
-                                    const mkpLucros = {};
-                                    dadosProcessados.forEach(d => {
-                                        const v = (d.vendedor || '').trim();
-                                        mkpCounts[v] = (mkpCounts[v] || 0) + 1;
-                                        mkpLucros[v] = (mkpLucros[v] || 0) + (d.lucro || 0);
-                                    });
-                                    const mkpConfig = [
-                                        { key: 'MERCADO LIVRE', label: 'ML', emoji: '🟡', bg: 'rgba(255,230,0,0.08)', border: 'rgba(255,230,0,0.35)', color: '#ffe600' },
-                                        { key: 'SHOPEE', label: 'Shopee', emoji: '🟠', bg: 'rgba(255,90,0,0.08)', border: 'rgba(255,90,0,0.35)', color: '#ff5a00' },
-                                        { key: 'MAGAZINE LUIZA', label: 'Magalu', emoji: '🔵', bg: 'rgba(29,123,255,0.08)', border: 'rgba(29,123,255,0.35)', color: '#1d7bff' },
-                                        { key: 'TIKTOK', label: 'TikTok', emoji: '⚫', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.2)', color: '#fff' },
-                                    ];
-                                    return mkpConfig.filter(m => mkpCounts[m.key]).map(m => (
-                                        <div key={m.key} style={{position: 'relative', flex: '1', minWidth: '70px', display: 'flex', flexDirection: 'column'}}>
-                                            <div
-                                                onClick={() => filtroMarketplace === m.key ? setFiltroMarketplace(null) : setFiltroMarketplace(m.key)}
-                                                style={{
-                                                    
-                                                flex: '1', minWidth: '70px', padding: '10px 8px', borderRadius: '14px',
-                                                background: filtroMarketplace === m.key ? m.bg.replace(/[\d.]+\)$/, '0.2)') : m.bg,
-                                                border: `1.5px solid ${filtroMarketplace === m.key ? m.color : m.border}`,
-                                                textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
-                                                boxShadow: filtroMarketplace === m.key ? `0 0 14px ${m.border}` : 'none',
-                                                transform: filtroMarketplace === m.key ? 'scale(1.03)' : 'scale(1)',
-                                            
-                                                }}>
-                                                <div style={{fontSize: '11px', fontWeight: 600, color: 'var(--soft)', marginBottom: '2px'}}>{m.emoji} {m.label}</div>
-                                                <div style={{fontSize: '20px', fontWeight: 800, color: m.color}}>{mkpCounts[m.key]}</div>
-                                            </div>
-                                            <div 
-                                                onClick={(e) => { e.stopPropagation(); setExpandedMkp(prev => ({...prev, [m.key]: !prev[m.key]})) }}
-                                                style={{
-                                                    position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)',
-                                                    background: '#1a1c23', border: `1px solid ${m.border}`, borderRadius: '10px',
-                                                    padding: '2px 14px', fontSize: '9px', cursor: 'pointer', zIndex: 2,
-                                                    color: 'var(--soft)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                                                }}>
-                                                {expandedMkp[m.key] ? '▲' : '▼'}
-                                            </div>
-                                            {expandedMkp[m.key] && (
-                                                <div style={{
-                                                    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-                                                    marginTop: '12px', background: 'rgba(20, 22, 28, 0.98)', border: `1px solid ${m.border}`,
-                                                    borderRadius: '8px', padding: '8px 12px', zIndex: 10,
-                                                    boxShadow: '0 4px 16px rgba(0,0,0,0.6)', whiteSpace: 'nowrap',
-                                                    fontSize: '13px', color: '#fff', textAlign: 'center'
-                                                }}>
-                                                    Lucro: <b style={{color: mkpLucros[m.key] >= 0 ? 'var(--green)' : 'var(--red)'}}>R$ {mkpLucros[m.key] ? mkpLucros[m.key].toFixed(2) : '0.00'}</b>
-                                                </div>
-                                            )}
+                            {/* --- NOVA SEÇÃO DE FILTROS (MOCKUP) --- */}
+                            
+                            {/* 1. RESUMO GERAL E FULL */}
+                            <div style={{display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap'}}>
+                                <div style={{flex: '1 1 calc(50% - 4px)', background: 'linear-gradient(145deg, rgba(30,30,40,1) 0%, rgba(20,20,25,1) 100%)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                    <div style={{width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(138,43,226,0.15)', display: 'grid', placeItems: 'center', color: '#a855f7', fontSize: '16px'}}>🛍️</div>
+                                    <div>
+                                        <div style={{fontSize: '9px', color: 'var(--soft)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Resumo Geral</div>
+                                        <div style={{fontSize: '20px', fontWeight: 'bold', lineHeight: '1.1'}}>{dadosProcessados.length}</div>
+                                        <div style={{fontSize: '10px', color: 'var(--soft)'}}>pedidos</div>
+                                    </div>
+                                </div>
+                                <div style={{flex: '1 1 calc(50% - 4px)', background: 'linear-gradient(145deg, rgba(30,30,40,1) 0%, rgba(20,20,25,1) 100%)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '12px'}}>
+                                    <div style={{width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(34,197,94,0.15)', display: 'grid', placeItems: 'center', color: '#22c55e', fontSize: '18px'}}>⚡</div>
+                                    <div style={{flex: 1}}>
+                                        <div style={{fontSize: '9px', color: 'var(--soft)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Full (Total)</div>
+                                        <div style={{display: 'flex', alignItems: 'baseline', gap: '6px'}}>
+                                            <div style={{fontSize: '20px', fontWeight: 'bold', lineHeight: '1.1'}}>{fullData.total}</div>
+                                            <div style={{fontSize: '9px', color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold'}}>{dadosProcessados.length > 0 ? ((fullData.total / dadosProcessados.length) * 100).toFixed(1) : 0}%</div>
                                         </div>
-                                    ));
-                                })()}
-                            </div>
-
-                            <div className="margin-cards-sticky">
-                                <div className="margin-cards">
-                                    <div className={`margin-card mc-red ${filtroRank?.valor === 'vermelho' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'vermelho' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Prejuízo (< 0%)'})}>
-                                        <h4>Prejuízo</h4>
-                                        <p className="mc-val">{margensResumo.vermelho}</p>
-                                        <p className="mc-label" style={{color: 'var(--red)'}}>&lt; 0%</p>
-                                    </div>
-                                    <div className={`margin-card mc-orange ${filtroRank?.valor === 'laranja' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'laranja' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Atenção (0 a 10%)'})}>
-                                        <h4>Atenção</h4>
-                                        <p className="mc-val">{margensResumo.laranja}</p>
-                                        <p className="mc-label" style={{color: 'var(--orange)'}}>0-10%</p>
-                                    </div>
-                                    <div className={`margin-card mc-yellow ${filtroRank?.valor === 'amarelo' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'amarelo' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Aceitável (10 a 20%)'})}>
-                                        <h4>Aceitável</h4>
-                                        <p className="mc-val">{margensResumo.amarelo}</p>
-                                        <p className="mc-label" style={{color: 'var(--yellow)'}}>10-20%</p>
-                                    </div>
-                                    <div className={`margin-card mc-green ${filtroRank?.valor === 'verde' ? 'active' : ''}`} onClick={() => filtroRank?.valor === 'verde' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Saudável (>= 20%)'})}>
-                                        <h4>Saudável</h4>
-                                        <p className="mc-val">{margensResumo.verde}</p>
-                                        <p className="mc-label" style={{color: 'var(--green)'}}>&gt;20%</p>
-                                    </div>
-                                    <div className={`margin-card mc-purple ${filtroRank?.tipo === 'carrinho' ? 'active' : ''}`} onClick={() => filtroRank?.tipo === 'carrinho' ? setFiltroRank(null) : setFiltroRank({tipo: 'carrinho', valor: 'carrinho', titulo: `${carrinhoCount} pedidos`})}>
-                                        <h4>🛒 Carrinho</h4>
-                                        <p className="mc-val">{carrinhoCount}</p>
-                                        <p className="mc-label" style={{color: '#a855f7'}}>+1 item</p>
+                                        <div style={{fontSize: '10px', color: 'var(--soft)'}}>pedidos</div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* VENDAS FULL CARD na aba de pedidos */}
-                            <div className="section" style={{marginTop:'16px', marginBottom: '10px'}}>
-                                <h2>⚡ Vendas Full ({fullData.total} pedidos)</h2>
+                            {/* 2. MARKETPLACES */}
+                            <div style={{marginBottom: '16px'}}>
+                                <div style={{fontSize: '10px', color: 'var(--soft)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px'}}>Marketplaces</div>
+                                <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+                                    {(() => {
+                                        const mkpCounts = {};
+                                        dadosProcessados.forEach(d => {
+                                            const v = (d.vendedor || '').trim();
+                                            mkpCounts[v] = (mkpCounts[v] || 0) + 1;
+                                        });
+                                        const mkpConfig = [
+                                            { key: 'MERCADO LIVRE', label: 'Mercado Livre', emoji: '🤝', bg: 'rgba(20,20,25,0.8)', border: 'rgba(255,230,0,0.5)', color: '#ffe600' },
+                                            { key: 'SHOPEE', label: 'Shopee', emoji: '🛍️', bg: 'rgba(20,20,25,0.8)', border: 'rgba(255,90,0,0.5)', color: '#ff5a00' },
+                                            { key: 'MAGAZINE LUIZA', label: 'Magalu', emoji: 'Ⓜ️', bg: 'rgba(20,20,25,0.8)', border: 'rgba(29,123,255,0.5)', color: '#1d7bff' },
+                                            { key: 'TIKTOK', label: 'TikTok', emoji: '🎵', bg: 'rgba(20,20,25,0.8)', border: 'rgba(168,85,247,0.5)', color: '#a855f7' },
+                                        ];
+                                        return mkpConfig.filter(m => mkpCounts[m.key]).map(m => (
+                                            <div key={m.key} onClick={() => filtroMarketplace === m.key ? setFiltroMarketplace(null) : setFiltroMarketplace(m.key)}
+                                                 style={{
+                                                     flex: '1 1 calc(50% - 3px)', minWidth: '120px', padding: '10px', borderRadius: '12px',
+                                                     background: m.bg, border: `1px solid ${filtroMarketplace === m.key ? m.color : 'rgba(255,255,255,0.05)'}`,
+                                                     cursor: 'pointer', transition: 'all 0.2s',
+                                                     boxShadow: filtroMarketplace === m.key ? `0 0 10px ${m.color}40` : 'none',
+                                                     display: 'flex', flexDirection: 'column', gap: '8px'
+                                                 }}>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                                    <div style={{width: '24px', height: '24px', borderRadius: '6px', background: `${m.color}20`, display: 'grid', placeItems: 'center', fontSize: '12px'}}>{m.emoji}</div>
+                                                    <div style={{fontSize: '11px', fontWeight: 600, color: 'var(--soft)'}}>{m.label}</div>
+                                                </div>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                                                    <div style={{fontSize: '20px', fontWeight: 800, color: '#fff'}}>{mkpCounts[m.key]}</div>
+                                                    <div style={{fontSize: '10px', color: 'var(--soft)'}}>{dadosProcessados.length > 0 ? ((mkpCounts[m.key] / dadosProcessados.length) * 100).toFixed(1) : 0}%</div>
+                                                </div>
+                                                <div style={{width: '100%', height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden'}}>
+                                                    <div style={{width: `${dadosProcessados.length > 0 ? (mkpCounts[m.key] / dadosProcessados.length) * 100 : 0}%`, height: '100%', background: m.color, borderRadius: '2px'}}></div>
+                                                </div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
                             </div>
-                            <div className="full-summary" style={{marginBottom:'10px', flexWrap:'wrap', gap:'6px'}}>
-                                {fullData.contas.map((conta, i) => {
-                                    const isActive = filtroFullConta === conta.nome;
-                                    return (
-                                        <div key={i} className={`full-chip ${isActive ? 'active' : ''}`} style={{cursor:'pointer', border: isActive ? '1px solid var(--green)' : '1px solid rgba(255,255,255,.12)', opacity: filtroFullConta && !isActive ? 0.4 : 1}} onClick={() => setFiltroFullConta(isActive ? null : conta.nome)}>
-                                            <b style={{fontSize:'11px'}}>{conta.nome.replace('ML ','').replace('SHOPEE ','SH ')}</b>
-                                            <span style={{marginLeft:'4px', fontSize:'12px', color:'var(--green)'}}>{conta.pedidos}</span>
+
+                            {/* 3. CONTAS FULL */}
+                            <div style={{marginBottom: '16px'}}>
+                                <div style={{fontSize: '10px', color: 'var(--soft)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Contas Full</div>
+                                <div style={{fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '8px'}}>Clique em uma conta para filtrar os pedidos abaixo</div>
+                                <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+                                    {fullData.contas.map((conta, i) => {
+                                        const isActive = filtroFullConta === conta.nome;
+                                        let color = '#a855f7'; 
+                                        if(conta.nome.includes('BEST')) color = '#22c55e';
+                                        if(conta.nome.includes('ACTIVE')) color = '#3b82f6';
+                                        if(conta.nome.includes('SUN')) color = '#f97316';
+                                        
+                                        return (
+                                            <div key={i} onClick={() => setFiltroFullConta(isActive ? null : conta.nome)}
+                                                 style={{
+                                                     flex: '1 1 calc(50% - 3px)', minWidth: '140px', padding: '12px', borderRadius: '12px',
+                                                     background: 'rgba(20,20,25,0.8)', border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.05)'}`,
+                                                     cursor: 'pointer', transition: 'all 0.2s',
+                                                     boxShadow: isActive ? `0 0 12px ${color}40` : 'none',
+                                                     display: 'flex', flexDirection: 'column', gap: '8px'
+                                                 }}>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                                    <div style={{width: '24px', height: '24px', borderRadius: '6px', background: `${color}20`, display: 'grid', placeItems: 'center', color: color, fontSize: '12px'}}>👑</div>
+                                                    <div style={{fontSize: '10px', fontWeight: 600, color: isActive ? '#fff' : 'var(--soft)'}}>{conta.nome.replace('ML ','').replace('SHOPEE ','SH ')}</div>
+                                                </div>
+                                                <div style={{display: 'flex', alignItems: 'baseline', gap: '4px'}}>
+                                                    <div style={{fontSize: '22px', fontWeight: 800, color: '#fff'}}>{conta.pedidos}</div>
+                                                    <div style={{fontSize: '10px', color: 'var(--soft)'}}>pedidos</div>
+                                                </div>
+                                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '4px'}}>
+                                                    <div>
+                                                        <div style={{fontSize: '11px', fontWeight: 'bold', color: '#fff'}}>R$ {conta.faturamento.toFixed(0)}</div>
+                                                        <div style={{fontSize: '9px', color: 'var(--soft)'}}>Vendas</div>
+                                                    </div>
+                                                    <div style={{textAlign: 'right'}}>
+                                                        <div style={{fontSize: '11px', fontWeight: 'bold', color: color}}>R$ {conta.lucro.toFixed(0)}</div>
+                                                        <div style={{fontSize: '9px', color: 'var(--soft)'}}>Lucro</div>
+                                                    </div>
+                                                </div>
+                                                <div style={{display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px'}}>
+                                                    <div style={{flex: 1, height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden'}}>
+                                                        <div style={{width: `${fullData.total > 0 ? (conta.pedidos / fullData.total) * 100 : 0}%`, height: '100%', background: color, borderRadius: '2px'}}></div>
+                                                    </div>
+                                                    <div style={{fontSize: '9px', color: 'var(--soft)'}}>{fullData.total > 0 ? ((conta.pedidos / fullData.total) * 100).toFixed(0) : 0}% do FULL</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 4. GRADUAÇÃO DOS PEDIDOS */}
+                            <div style={{marginBottom: '16px'}}>
+                                <div style={{fontSize: '10px', color: 'var(--soft)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px'}}>Graduação dos Pedidos <span style={{opacity: 0.5}}>ⓘ</span></div>
+                                <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap'}}>
+                                    <div className={`margin-card mc-red ${filtroRank?.valor === 'vermelho' ? 'active' : ''}`} style={{flex: '1 1 calc(33% - 4px)', padding: '10px', minWidth: '90px', borderRadius: '12px'}} onClick={() => filtroRank?.valor === 'vermelho' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'vermelho', titulo: 'Prejuízo (< 0%)'})}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px'}}>
+                                            <span style={{fontSize: '12px', color: 'var(--red)'}}>📉</span><h4 style={{margin: 0, fontSize: '9px', color: 'var(--soft)'}}>PREJUÍZO</h4>
                                         </div>
-                                    );
-                                })}
+                                        <p className="mc-val" style={{fontSize: '18px'}}>{margensResumo.vermelho}</p>
+                                        <p className="mc-label" style={{color: 'var(--red)', fontSize: '9px'}}>&lt; 0%</p>
+                                    </div>
+                                    <div className={`margin-card mc-orange ${filtroRank?.valor === 'laranja' ? 'active' : ''}`} style={{flex: '1 1 calc(33% - 4px)', padding: '10px', minWidth: '90px', borderRadius: '12px'}} onClick={() => filtroRank?.valor === 'laranja' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'laranja', titulo: 'Atenção (0 a 10%)'})}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px'}}>
+                                            <span style={{fontSize: '12px', color: 'var(--orange)'}}>⚠️</span><h4 style={{margin: 0, fontSize: '9px', color: 'var(--soft)'}}>ATENÇÃO</h4>
+                                        </div>
+                                        <p className="mc-val" style={{fontSize: '18px'}}>{margensResumo.laranja}</p>
+                                        <p className="mc-label" style={{color: 'var(--orange)', fontSize: '9px'}}>0 a 10%</p>
+                                    </div>
+                                    <div className={`margin-card mc-yellow ${filtroRank?.valor === 'amarelo' ? 'active' : ''}`} style={{flex: '1 1 calc(33% - 4px)', padding: '10px', minWidth: '90px', borderRadius: '12px'}} onClick={() => filtroRank?.valor === 'amarelo' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'amarelo', titulo: 'Aceitável (10 a 20%)'})}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px'}}>
+                                            <span style={{fontSize: '12px', color: 'var(--yellow)'}}>😐</span><h4 style={{margin: 0, fontSize: '9px', color: 'var(--soft)'}}>ACEITÁVEL</h4>
+                                        </div>
+                                        <p className="mc-val" style={{fontSize: '18px'}}>{margensResumo.amarelo}</p>
+                                        <p className="mc-label" style={{color: 'var(--yellow)', fontSize: '9px'}}>10 a 20%</p>
+                                    </div>
+                                    <div className={`margin-card mc-green ${filtroRank?.valor === 'verde' ? 'active' : ''}`} style={{flex: '1 1 calc(50% - 3px)', padding: '10px', minWidth: '100px', borderRadius: '12px'}} onClick={() => filtroRank?.valor === 'verde' ? setFiltroRank(null) : setFiltroRank({tipo: 'margem', valor: 'verde', titulo: 'Saudável (>= 20%)'})}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px'}}>
+                                            <span style={{fontSize: '12px', color: 'var(--green)'}}>📈</span><h4 style={{margin: 0, fontSize: '9px', color: 'var(--soft)'}}>SAUDÁVEL</h4>
+                                        </div>
+                                        <p className="mc-val" style={{fontSize: '18px'}}>{margensResumo.verde}</p>
+                                        <p className="mc-label" style={{color: 'var(--green)', fontSize: '9px'}}>&gt; 20%</p>
+                                    </div>
+                                    <div className={`margin-card mc-purple ${filtroRank?.tipo === 'carrinho' ? 'active' : ''}`} style={{flex: '1 1 calc(50% - 3px)', padding: '10px', minWidth: '100px', borderRadius: '12px'}} onClick={() => filtroRank?.tipo === 'carrinho' ? setFiltroRank(null) : setFiltroRank({tipo: 'carrinho', valor: 'carrinho', titulo: `${carrinhoCount} pedidos`})}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px'}}>
+                                            <span style={{fontSize: '12px', color: '#a855f7'}}>🛒</span><h4 style={{margin: 0, fontSize: '9px', color: 'var(--soft)'}}>CARRINHOS</h4>
+                                        </div>
+                                        <p className="mc-val" style={{fontSize: '18px'}}>{carrinhoCount}</p>
+                                        <p className="mc-label" style={{color: '#a855f7', fontSize: '9px'}}>+1 item</p>
+                                    </div>
+                                </div>
                             </div>
+                            {/* --- FIM DA NOVA SEÇÃO --- */}
                             
                             
                             <div className="orders-list">
