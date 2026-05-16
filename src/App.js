@@ -938,7 +938,7 @@ function Resultados() {
                                     <section className="infocard">
                                         <div className="orders-list">
                                             {prejuizos.map((item, index) => (
-                                                <article className="product-row prejuizo-row" key={index}>
+                                                <article className="product-row prejuizo-row" key={index} style={{cursor:'pointer'}} onClick={() => setPedidoSelecionado(item.pedido_id)}>
                                                     <div className="product-photo">
                                                         {item.url_imagem && item.url_imagem.trim() !== 'None' ? (
                                                             <img src={item.url_imagem.startsWith('http') ? item.url_imagem : 'https://' + item.url_imagem} alt="" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
