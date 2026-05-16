@@ -293,9 +293,12 @@ function Resultados() {
 
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
             
-            // total_pedido dividido pela quantidade de itens distintos para obter o valor bruto por item.
+            // Valor de venda: usa vlr_unit (preço unitário real do item) quando disponível.
+            // Fallback: total_pedido / itens (divisão igual, menos preciso para carrinhos mistos).
             const itensNoPedido = item.itens || 1;
-            const valorDeVenda = item.total_pedido / itensNoPedido; 
+            const valorDeVenda = (item.vlr_unit && item.vlr_unit > 0) 
+                ? (item.vlr_unit * (item.quant_itens || 1)) 
+                : (item.total_pedido / itensNoPedido); 
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
@@ -1450,7 +1453,7 @@ function Resultados() {
                     {pedidoSelecionado && (() => {
                         const itensDoPedido = dadosProcessados.filter(d => d.pedido_id === pedidoSelecionado);
                         if (itensDoPedido.length === 0) return null;
-                        const totalPedidoVenda = itensDoPedido[0].total_pedido;
+                        const totalPedidoVenda = itensDoPedido.reduce((acc, curr) => acc + curr.valorDeVenda, 0);
                         const totalItensCusto = itensDoPedido.reduce((acc, curr) => acc + curr.custoProduto, 0);
                         const totalItensTaxa = itensDoPedido.reduce((acc, curr) => acc + curr.taxaFixa, 0);
                         const totalItensComissao = itensDoPedido.reduce((acc, curr) => acc + curr.tarifaDeVenda, 0);
