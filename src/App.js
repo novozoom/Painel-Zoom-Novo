@@ -293,10 +293,9 @@ function Resultados() {
 
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
             
-            // FIX: vlr_total do ERP é o valor LÍQUIDO (pós-comissão) em muitas origens.
-            // Usar total_pedido dividido pela quantidade de itens distintos para obter o valor bruto por item.
+            // total_pedido dividido pela quantidade de itens distintos para obter o valor bruto por item.
             const itensNoPedido = item.itens || 1;
-            const valorDeVenda = item.vlr_total || (item.total_pedido / itensNoPedido); 
+            const valorDeVenda = item.total_pedido / itensNoPedido; 
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
@@ -1451,7 +1450,7 @@ function Resultados() {
                     {pedidoSelecionado && (() => {
                         const itensDoPedido = dadosProcessados.filter(d => d.pedido_id === pedidoSelecionado);
                         if (itensDoPedido.length === 0) return null;
-                        const totalPedidoVenda = itensDoPedido.reduce((acc, curr) => acc + curr.valorDeVenda, 0);
+                        const totalPedidoVenda = itensDoPedido[0].total_pedido;
                         const totalItensCusto = itensDoPedido.reduce((acc, curr) => acc + curr.custoProduto, 0);
                         const totalItensTaxa = itensDoPedido.reduce((acc, curr) => acc + curr.taxaFixa, 0);
                         const totalItensComissao = itensDoPedido.reduce((acc, curr) => acc + curr.tarifaDeVenda, 0);
