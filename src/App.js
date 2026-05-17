@@ -299,7 +299,9 @@ function Resultados() {
             const valorDeVenda = item.total_pedido / itensNoPedido; 
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
-            const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
+            // CUSTO: vlr_custo já é o custo do produto/kit inteiro.
+            // NÃO multiplicar por quant_itens pois esse campo é o desmembramento do kit no ERP.
+            const custoProduto = item.vlr_custo || 0;
             const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, itensNoPedido);
             
             const descImposto = valorDeVenda * (imposto / 100);
@@ -1519,7 +1521,7 @@ function Resultados() {
                                                 </div>
                                                 <div style={{flex: 1}}>
                                                     <h4 style={{margin:0, fontSize:'13px'}}>{it.titulo || 'Produto'}</h4>
-                                                    <p style={{margin:'2px 0 0', fontSize:'11px', color:'var(--soft)'}}>{it.quant_itens}x | SKU: {it.cod_interno}</p>
+                                                    <p style={{margin:'2px 0 0', fontSize:'11px', color:'var(--soft)'}}>1x | SKU: {it.cod_interno}</p>
                                                 </div>
                                                 <div style={{textAlign: 'right'}}>
                                                     <span style={{fontSize:'12px', color:'var(--orange)'}}>Custo R$ {it.custoProduto.toFixed(2)}</span>
