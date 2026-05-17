@@ -1495,6 +1495,18 @@ function Resultados() {
                                         <button onClick={() => setPedidoSelecionado(null)} style={{background: 'transparent', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer'}}>✕</button>
                                     </div>
                                     <div style={{padding: '16px', overflowY: 'auto', flex: 1}}>
+                                        {(() => {
+                                            const somaVlrTotal = itensDoPedido.reduce((a,c) => a + (c.vlr_total || 0), 0);
+                                            const diff = Math.abs(totalPedidoVenda - somaVlrTotal);
+                                            if (diff > 1 && somaVlrTotal > 0) {
+                                                return (
+                                                    <div style={{background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '10px', padding: '10px', marginBottom: '12px', fontSize: '11px', color: '#f97316'}}>
+                                                        ⚠️ <b>Carrinho incompleto:</b> Total do pedido é R$ {totalPedidoVenda.toFixed(2)} mas os itens visíveis somam R$ {somaVlrTotal.toFixed(2)}. Faltam itens neste pedido no banco de dados. Os cálculos podem estar imprecisos.
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
                                         <div style={{marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                             <span style={{color: 'var(--soft)', fontSize: '13px'}}>Itens do Carrinho ({itensDoPedido.length})</span>
                                         </div>
