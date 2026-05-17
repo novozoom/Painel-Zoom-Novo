@@ -293,12 +293,10 @@ function Resultados() {
 
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
             
-            // Valor de venda: usa vlr_unit (preço unitário real do item) quando disponível.
-            // Fallback: total_pedido / itens (divisão igual, menos preciso para carrinhos mistos).
+            // Valor de venda: total_pedido / quantidade de itens distintos no pedido.
+            // NOTA: vlr_unit do ERP é inconsistente (às vezes preço venda, às vezes custo unitário).
             const itensNoPedido = item.itens || 1;
-            const valorDeVenda = (item.vlr_unit && item.vlr_unit > 0) 
-                ? (item.vlr_unit * (item.quant_itens || 1)) 
-                : (item.total_pedido / itensNoPedido); 
+            const valorDeVenda = item.total_pedido / itensNoPedido; 
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
@@ -1471,7 +1469,7 @@ function Resultados() {
                     {pedidoSelecionado && (() => {
                         const itensDoPedido = dadosProcessados.filter(d => d.pedido_id === pedidoSelecionado);
                         if (itensDoPedido.length === 0) return null;
-                        const totalPedidoVenda = itensDoPedido.reduce((acc, curr) => acc + curr.valorDeVenda, 0);
+                        const totalPedidoVenda = itensDoPedido[0].total_pedido;
                         const totalItensCusto = itensDoPedido.reduce((acc, curr) => acc + curr.custoProduto, 0);
                         const totalItensTaxa = itensDoPedido.reduce((acc, curr) => acc + curr.taxaFixa, 0);
                         const totalItensComissao = itensDoPedido.reduce((acc, curr) => acc + curr.tarifaDeVenda, 0);
@@ -1488,6 +1486,11 @@ function Resultados() {
                                         <div>
                                             <h3 style={{margin: 0, fontSize: '16px'}}>Detalhes do Pedido</h3>
                                             <p style={{margin: '2px 0 0', fontSize: '12px', color: 'var(--soft)'}}>ID: {pedidoSelecionado}{itensDoPedido[0]?.integracao ? ` | Ext: ${itensDoPedido[0].integracao}` : ''}</p>
+                                            <div style={{display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap'}}>
+                                                <span style={{fontSize: '10px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(255,165,0,0.15)', color: '#ff9f43', fontWeight: 600}}>{(itensDoPedido[0]?.origem_nome || '').trim()}</span>
+                                                <span style={{fontSize: '10px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontWeight: 600}}>{(itensDoPedido[0]?.vendedor || '').trim()}</span>
+                                                {itensDoPedido[0]?.full_status === 'TRUE' && <span style={{fontSize: '10px', padding: '2px 8px', borderRadius: '6px', background: 'rgba(34,197,94,0.15)', color: '#22c55e', fontWeight: 600}}>⚡ FULL</span>}
+                                            </div>
                                         </div>
                                         <button onClick={() => setPedidoSelecionado(null)} style={{background: 'transparent', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer'}}>✕</button>
                                     </div>
