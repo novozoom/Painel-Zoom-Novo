@@ -300,7 +300,7 @@ function Resultados() {
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
-            const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, item.quant_itens);
+            const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, itensNoPedido);
             
             const descImposto = valorDeVenda * (imposto / 100);
             const descOperacional = valorDeVenda * (custoOperacional / 100);
