@@ -42,6 +42,10 @@ SELECT
     PM.[POSICAO],
     PM.[INTEGRACAO],
     PM.[QUANT_ITENS],
+    CASE 
+        WHEN PI.[VLR_UNIT] > 0 THEN CAST(ROUND(PI.[VLR_TOTAL] / PI.[VLR_UNIT], 0) AS INT)
+        ELSE PM.[QUANT_ITENS]
+    END AS [QUANT_REAL],
     
     PI.[VLR_UNIT],
     PI.[VLR_TOTAL],
@@ -130,7 +134,7 @@ ORDER BY
             "vlr_frete_comprador": float(dicionario_resultado.get("VLRFRETE_COMPRADOR") or 0),
             "posicao": dicionario_resultado.get("POSICAO", ""),
             "integracao": dicionario_resultado.get("INTEGRACAO", ""),
-            "quant_itens": int(dicionario_resultado.get("QUANT_ITENS") or 0),
+            "quant_itens": int(dicionario_resultado.get("QUANT_REAL") or dicionario_resultado.get("QUANT_ITENS") or 1),
             "vlr_unit": float(dicionario_resultado.get("VLR_UNIT") or 0),
             "vlr_total": float(dicionario_resultado.get("VLR_TOTAL") or 0),
             "sku": str(dicionario_resultado.get("SKU", "")),
