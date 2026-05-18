@@ -43,6 +43,12 @@ function Resultados() {
     const [custoOperacional, setCustoOperacional] = useState(() => { const val = localStorage.getItem('cfg_custoOper'); return val ? parseFloat(val) : 6; });
     const [mostrarConfig, setMostrarConfig] = useState(false);
     
+    // Estados do Estoque
+    const [estoqueQuery, setEstoqueQuery] = useState('');
+    const [estoqueResultados, setEstoqueResultados] = useState([]);
+    const [isEstoqueLoading, setIsEstoqueLoading] = useState(false);
+    const [estoqueMsg, setEstoqueMsg] = useState('');
+    
     useEffect(() => {
         localStorage.setItem('cfg_imposto', imposto);
         localStorage.setItem('cfg_custoOper', custoOperacional);
@@ -154,6 +160,31 @@ function Resultados() {
         const tempoDeAtualizacao = setInterval(buscarDadosOntem, 60000);
         return () => clearInterval(tempoDeAtualizacao);
     }, []);
+
+    const buscarEstoque = async (e) => {
+        if(e) e.preventDefault();
+        if(estoqueQuery.trim().length < 2) {
+            setEstoqueMsg('Digite pelo menos 2 caracteres.');
+            return;
+        }
+        setIsEstoqueLoading(true);
+        setEstoqueMsg('');
+        try {
+            const res = await axios.get(`${API_URL}/api/estoque/busca?q=${encodeURIComponent(estoqueQuery)}`);
+            if (res.data.status === 'success') {
+                setEstoqueResultados(res.data.resultados);
+                if(res.data.resultados.length === 0) {
+                    setEstoqueMsg('Nenhum produto encontrado.');
+                }
+            } else {
+                setEstoqueMsg(res.data.message || 'Erro na busca.');
+            }
+        } catch (error) {
+            console.error(error);
+            setEstoqueMsg('Erro ao conectar com o servidor.');
+        }
+        setIsEstoqueLoading(false);
+    };
 
     // Sincronizar e buscar dados
     const exportToXLSX = (pedidos) => {
@@ -1470,6 +1501,89 @@ function Resultados() {
                         </div>
                     )}
 
+                    {abaPrincipal === 'estoque' && (
+                        <div className="page-content estoque-view">
+                            <div className="section" style={{marginTop:'0', paddingBottom:'10px'}}>
+                                <h2>📊 Consulta de Estoque</h2>
+                                <p style={{fontSize:'12px', color:'var(--soft)', marginTop:'4px'}}>Pesquise por Fornecedor, Nome, SKU ou Barras</p>
+                            </div>
+                            
+                            <form onSubmit={buscarEstoque} style={{display:'flex', gap:'8px', marginBottom:'16px'}}>
+                                <input 
+                                    type="text" 
+                                    value={estoqueQuery} 
+                                    onChange={e => setEstoqueQuery(e.target.value)} 
+                                    placeholder="Ex: PARAMOUNT ou 789123..." 
+                                    style={{flex:1, background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.1)', color:'white', padding:'12px 16px', borderRadius:'12px', fontSize:'14px', outline:'none'}} 
+                                />
+                                <button type="submit" style={{background:'var(--cyan)', color:'black', border:'none', padding:'0 20px', borderRadius:'12px', fontWeight:'bold', cursor:'pointer'}}>
+                                    {isEstoqueLoading ? '⌛' : 'Buscar'}
+                                </button>
+                            </form>
+
+                            {estoqueMsg && (
+                                <div style={{textAlign:'center', color:'var(--soft)', fontSize:'13px', margin:'10px 0'}}>
+                                    {estoqueMsg}
+                                </div>
+                            )}
+
+                            <div className="orders-list">
+                                {estoqueResultados.map((item, index) => {
+                                    // Calcula total em estoque (soma de todos os armazéns)
+                                    const totalQtd = item.estoques.reduce((acc, e) => acc + e.quantidade, 0);
+                                    
+                                    return (
+                                        <article className="product-row" key={index} style={{borderLeft: '4px solid var(--cyan)'}}>
+                                            <div className="product-photo">
+                                                {item.foto_url && item.foto_url.trim() !== 'None' ? (
+                                                    <img src={item.foto_url} alt="" loading="lazy" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                ) : '📦'}
+                                            </div>
+                                            <div className="product-info" style={{width: '100%'}}>
+                                                <h3>{item.descricao}</h3>
+                                                <div className="tags" style={{marginTop: '6px', marginBottom: '8px'}}>
+                                                    <span className="tag origin">{item.fornecedor}</span>
+                                                    {item.cod_interno && <span className="tag pid">SKU: {item.cod_interno}</span>}
+                                                    {item.cod_barras && <span className="tag" style={{background: 'rgba(255,255,255,0.05)', color: 'var(--soft)'}}>EAN: {item.cod_barras}</span>}
+                                                </div>
+                                                
+                                                {/* Estoques */}
+                                                <div style={{display:'flex', gap:'6px', flexWrap:'wrap', marginBottom:'8px'}}>
+                                                    {item.estoques.length === 0 ? (
+                                                        <span style={{fontSize:'11px', padding:'3px 8px', borderRadius:'6px', background:'rgba(255,0,0,0.1)', color:'var(--red)'}}>Sem estoque</span>
+                                                    ) : (
+                                                        item.estoques.map((est, i) => (
+                                                            <span key={i} style={{
+                                                                fontSize:'11px', padding:'3px 8px', borderRadius:'6px', 
+                                                                background: est.armazem.toUpperCase().includes('FULL') ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)', 
+                                                                color: est.armazem.toUpperCase().includes('FULL') ? '#22c55e' : 'white',
+                                                                fontWeight: '600'
+                                                            }}>
+                                                                {est.armazem.toUpperCase().includes('FULL') ? '⚡ ' : '📦 '}
+                                                                {est.armazem}: {est.quantidade}
+                                                            </span>
+                                                        ))
+                                                    )}
+                                                </div>
+                                                
+                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)'}}>
+                                                    <div>
+                                                        <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Giro (30d)</p>
+                                                        <b style={{color: item.vendas_30d > 0 ? 'var(--cyan)' : 'var(--soft)', fontSize: '14px'}}>{item.vendas_30d} unid.</b>
+                                                    </div>
+                                                    <div style={{textAlign: 'right'}}>
+                                                        <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Custo Ref.</p>
+                                                        <b style={{color: 'var(--orange)', fontSize: '14px'}}>R$ {item.custo.toFixed(2)}</b>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* MODAL DE RESUMO DO PEDIDO */}
                     {pedidoSelecionado && (() => {
                         const itensDoPedido = dadosProcessados.filter(d => d.pedido_id === pedidoSelecionado);
@@ -1582,7 +1696,7 @@ function Resultados() {
                     <div className={abaPrincipal === 'home' ? 'active' : ''} onClick={() => { setAbaPrincipal('home'); syncEBuscar(); window.scrollTo({top:0,behavior:'smooth'}); }}><b>🏠</b>Home</div>
                     <div className={abaPrincipal === 'pedidos' ? 'active' : ''} onClick={() => { setAbaPrincipal('pedidos'); window.scrollTo({top:0,behavior:'smooth'}); }}><b>📋</b>Pedidos</div>
                     <div className={abaPrincipal === 'full' ? 'active' : ''} onClick={() => { setAbaPrincipal('full'); window.scrollTo({top:0,behavior:'smooth'}); }}><b>📦</b>Full</div>
-                    <div onClick={() => {}}><b>📊</b>Estoque</div>
+                    <div className={abaPrincipal === 'estoque' ? 'active' : ''} onClick={() => { setAbaPrincipal('estoque'); window.scrollTo({top:0,behavior:'smooth'}); }}><b>📊</b>Estoque</div>
                 </nav>
             </div>
         </main>

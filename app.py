@@ -5,6 +5,7 @@ from flask_cors import CORS
 # Importa rotas dos módulos
 from faturamento_atual import bp as faturamento_atual_bp
 from faturamento_anterior import bp as faturamento_anterior_bp
+from estoque_api import bp as estoque_bp
 
 app = Flask(__name__)
 CORS(app)
@@ -12,6 +13,7 @@ CORS(app)
 # Registra as rotas
 app.register_blueprint(faturamento_atual_bp)
 app.register_blueprint(faturamento_anterior_bp)
+app.register_blueprint(estoque_bp)
 
 @app.route("/")
 def home():

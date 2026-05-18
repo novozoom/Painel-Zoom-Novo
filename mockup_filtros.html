@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup - Filtros Pedidos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #12141a; color: #fff; padding: 16px; max-width: 420px; margin: 0 auto; }
+  
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.4); margin-bottom: 10px; }
+  
+  /* RESUMO */
+  .resumo-row { display: flex; gap: 8px; margin-bottom: 18px; }
+  .resumo-card { flex: 1; padding: 14px; border-radius: 16px; display: flex; align-items: center; gap: 12px; }
+  .resumo-card.geral { background: linear-gradient(135deg, rgba(138,43,226,0.12) 0%, rgba(20,20,30,0.9) 100%); border: 1.5px solid rgba(138,43,226,0.4); box-shadow: 0 0 20px rgba(138,43,226,0.15); }
+  .resumo-card.full { background: linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(20,20,30,0.9) 100%); border: 1.5px solid rgba(34,197,94,0.4); box-shadow: 0 0 20px rgba(34,197,94,0.15); }
+  .resumo-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; }
+  .resumo-card.geral .resumo-icon { background: rgba(138,43,226,0.2); }
+  .resumo-card.full .resumo-icon { background: rgba(34,197,94,0.2); }
+  .resumo-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.5); }
+  .resumo-num { font-size: 28px; font-weight: 900; line-height: 1; }
+  .resumo-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .badge-green { font-size: 10px; color: #22c55e; background: rgba(34,197,94,0.15); padding: 2px 6px; border-radius: 6px; font-weight: 700; margin-left: 6px; }
+
+  /* MARKETPLACES */
+  .mkp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+  .mkp-card { padding: 14px; border-radius: 14px; background: rgba(18,20,26,0.9); cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+  .mkp-card:hover { transform: scale(1.02); }
+  .mkp-card::before { content: ''; position: absolute; inset: 0; border-radius: 14px; padding: 1.5px; background: var(--glow-color); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+  .mkp-card.ml { --glow-color: linear-gradient(135deg, #ffe600, rgba(255,230,0,0.3)); box-shadow: 0 0 18px rgba(255,230,0,0.12); }
+  .mkp-card.sh { --glow-color: linear-gradient(135deg, #ff5a00, rgba(255,90,0,0.3)); box-shadow: 0 0 18px rgba(255,90,0,0.12); }
+  .mkp-card.mg { --glow-color: linear-gradient(135deg, #1d7bff, rgba(29,123,255,0.3)); box-shadow: 0 0 18px rgba(29,123,255,0.12); }
+  .mkp-card.tk { --glow-color: linear-gradient(135deg, #a855f7, rgba(168,85,247,0.3)); box-shadow: 0 0 18px rgba(168,85,247,0.12); }
+  .mkp-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .mkp-icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; }
+  .mkp-card.ml .mkp-icon { background: rgba(255,230,0,0.15); }
+  .mkp-card.sh .mkp-icon { background: rgba(255,90,0,0.15); }
+  .mkp-card.mg .mkp-icon { background: rgba(29,123,255,0.15); }
+  .mkp-card.tk .mkp-icon { background: rgba(168,85,247,0.15); }
+  .mkp-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); }
+  .mkp-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+  .mkp-num { font-size: 32px; font-weight: 900; line-height: 1; }
+  .mkp-pct { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 600; }
+  .mkp-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .mkp-bar-fill { height: 100%; border-radius: 3px; }
+  .mkp-card.ml .mkp-bar-fill { background: linear-gradient(90deg, #ffe600, #ffb300); }
+  .mkp-card.sh .mkp-bar-fill { background: linear-gradient(90deg, #ff5a00, #ff8c00); }
+  .mkp-card.mg .mkp-bar-fill { background: linear-gradient(90deg, #1d7bff, #60a5fa); }
+  .mkp-card.tk .mkp-bar-fill { background: linear-gradient(90deg, #a855f7, #c084fc); }
+
+  /* CONTAS FULL */
+  .full-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+  .full-card { padding: 14px; border-radius: 14px; background: rgba(18,20,26,0.9); cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; gap: 8px; }
+  .full-card:hover { transform: scale(1.02); }
+  .full-card.best { border: 1.5px solid rgba(34,197,94,0.4); box-shadow: 0 0 20px rgba(34,197,94,0.12); }
+  .full-card.sun { border: 1.5px solid rgba(249,115,22,0.4); box-shadow: 0 0 20px rgba(249,115,22,0.12); }
+  .full-card.active { border: 1.5px solid rgba(59,130,246,0.4); box-shadow: 0 0 20px rgba(59,130,246,0.12); }
+  .full-header { display: flex; align-items: center; gap: 8px; }
+  .full-icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; }
+  .full-card.best .full-icon { background: rgba(34,197,94,0.2); color: #22c55e; }
+  .full-card.sun .full-icon { background: rgba(249,115,22,0.2); color: #f97316; }
+  .full-card.active .full-icon { background: rgba(59,130,246,0.2); color: #3b82f6; }
+  .full-name { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); }
+  .full-num { font-size: 28px; font-weight: 900; line-height: 1; }
+  .full-num span { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.4); margin-left: 4px; }
+  .full-values { display: flex; justify-content: space-between; }
+  .full-val-label { font-size: 9px; color: rgba(255,255,255,0.35); }
+  .full-val-num { font-size: 13px; font-weight: 700; }
+  .full-card.best .lucro { color: #22c55e; }
+  .full-card.sun .lucro { color: #f97316; }
+  .full-card.active .lucro { color: #3b82f6; }
+  .full-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; display: flex; align-items: center; gap: 6px; }
+  .full-bar-inner { height: 100%; border-radius: 3px; }
+  .full-card.best .full-bar-inner { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .full-card.sun .full-bar-inner { background: linear-gradient(90deg, #f97316, #fb923c); }
+  .full-card.active .full-bar-inner { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+  .full-pct { font-size: 9px; color: rgba(255,255,255,0.35); white-space: nowrap; }
+
+  /* GRADUAÇÃO */
+  .grad-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .grad-card { flex: 1 1 calc(33.33% - 4px); min-width: 90px; padding: 12px; border-radius: 14px; background: rgba(18,20,26,0.9); cursor: pointer; transition: all 0.3s; text-align: center; }
+  .grad-card:hover { transform: scale(1.03); }
+  .grad-card.red { border: 1.5px solid rgba(239,68,68,0.4); box-shadow: 0 0 16px rgba(239,68,68,0.1); }
+  .grad-card.orange { border: 1.5px solid rgba(249,115,22,0.4); box-shadow: 0 0 16px rgba(249,115,22,0.1); }
+  .grad-card.yellow { border: 1.5px solid rgba(234,179,8,0.4); box-shadow: 0 0 16px rgba(234,179,8,0.1); }
+  .grad-card.green { border: 1.5px solid rgba(34,197,94,0.5); box-shadow: 0 0 16px rgba(34,197,94,0.12); }
+  .grad-card.purple { border: 1.5px solid rgba(168,85,247,0.4); box-shadow: 0 0 16px rgba(168,85,247,0.1); }
+  .grad-emoji { font-size: 16px; margin-bottom: 4px; }
+  .grad-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .grad-card.red .grad-label { color: #ef4444; }
+  .grad-card.orange .grad-label { color: #f97316; }
+  .grad-card.yellow .grad-label { color: #eab308; }
+  .grad-card.green .grad-label { color: #22c55e; }
+  .grad-card.purple .grad-label { color: #a855f7; }
+  .grad-num { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 2px; }
+  .grad-range { font-size: 10px; font-weight: 600; }
+  .grad-card.red .grad-range { color: rgba(239,68,68,0.7); }
+  .grad-card.orange .grad-range { color: rgba(249,115,22,0.7); }
+  .grad-card.yellow .grad-range { color: rgba(234,179,8,0.7); }
+  .grad-card.green .grad-range { color: rgba(34,197,94,0.7); }
+  .grad-card.purple .grad-range { color: rgba(168,85,247,0.7); }
+  .grad-wide { flex: 1 1 calc(50% - 3px); }
+</style>
+</head>
+<body>
+
+<!-- RESUMO GERAL -->
+<div class="resumo-row">
+  <div class="resumo-card geral">
+    <div class="resumo-icon">🛍️</div>
+    <div>
+      <div class="resumo-label">Resumo Geral</div>
+      <div class="resumo-num">310</div>
+      <div class="resumo-sub">pedidos</div>
+    </div>
+  </div>
+  <div class="resumo-card full">
+    <div class="resumo-icon">⚡</div>
+    <div>
+      <div class="resumo-label">Full (Total)</div>
+      <div style="display:flex;align-items:baseline;">
+        <div class="resumo-num">115</div>
+        <span class="badge-green">37.1%</span>
+      </div>
+      <div class="resumo-sub">pedidos</div>
+    </div>
+  </div>
+</div>
+
+<!-- MARKETPLACES -->
+<div class="section-title">Marketplaces</div>
+<div class="mkp-grid">
+  <div class="mkp-card ml">
+    <div class="mkp-header">
+      <div class="mkp-icon">🤝</div>
+      <div class="mkp-name">Mercado Livre</div>
+    </div>
+    <div class="mkp-row">
+      <div class="mkp-num">225</div>
+      <div class="mkp-pct">72.6%</div>
+    </div>
+    <div class="mkp-bar"><div class="mkp-bar-fill" style="width:72.6%"></div></div>
+  </div>
+  <div class="mkp-card sh">
+    <div class="mkp-header">
+      <div class="mkp-icon">🛒</div>
+      <div class="mkp-name">Shopee</div>
+    </div>
+    <div class="mkp-row">
+      <div class="mkp-num">64</div>
+      <div class="mkp-pct">20.6%</div>
+    </div>
+    <div class="mkp-bar"><div class="mkp-bar-fill" style="width:20.6%"></div></div>
+  </div>
+  <div class="mkp-card mg">
+    <div class="mkp-header">
+      <div class="mkp-icon">🔵</div>
+      <div class="mkp-name">Magalu</div>
+    </div>
+    <div class="mkp-row">
+      <div class="mkp-num">18</div>
+      <div class="mkp-pct">5.8%</div>
+    </div>
+    <div class="mkp-bar"><div class="mkp-bar-fill" style="width:5.8%"></div></div>
+  </div>
+  <div class="mkp-card tk">
+    <div class="mkp-header">
+      <div class="mkp-icon">🎵</div>
+      <div class="mkp-name">TikTok</div>
+    </div>
+    <div class="mkp-row">
+      <div class="mkp-num">3</div>
+      <div class="mkp-pct">1.0%</div>
+    </div>
+    <div class="mkp-bar"><div class="mkp-bar-fill" style="width:1%"></div></div>
+  </div>
+</div>
+
+<!-- CONTAS FULL -->
+<div class="section-title">Contas Full</div>
+<div style="font-size:10px;color:rgba(255,255,255,0.25);margin:-6px 0 10px;">Clique em uma conta para filtrar</div>
+<div class="full-grid">
+  <div class="full-card best">
+    <div class="full-header">
+      <div class="full-icon">👑</div>
+      <div class="full-name">BEST SHOP</div>
+    </div>
+    <div class="full-num">61 <span>pedidos</span></div>
+    <div class="full-values">
+      <div><div class="full-val-num">R$ 3.089</div><div class="full-val-label">Vendas</div></div>
+      <div style="text-align:right"><div class="full-val-num lucro">R$ 467</div><div class="full-val-label">Lucro</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="full-bar" style="flex:1"><div class="full-bar-inner" style="width:53%"></div></div>
+      <div class="full-pct">53% do FULL</div>
+    </div>
+  </div>
+  <div class="full-card sun">
+    <div class="full-header">
+      <div class="full-icon">👑</div>
+      <div class="full-name">SUN SHOP</div>
+    </div>
+    <div class="full-num">36 <span>pedidos</span></div>
+    <div class="full-values">
+      <div><div class="full-val-num">R$ 1.801</div><div class="full-val-label">Vendas</div></div>
+      <div style="text-align:right"><div class="full-val-num lucro">R$ 361</div><div class="full-val-label">Lucro</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="full-bar" style="flex:1"><div class="full-bar-inner" style="width:31%"></div></div>
+      <div class="full-pct">31% do FULL</div>
+    </div>
+  </div>
+  <div class="full-card active" style="grid-column: span 2;">
+    <div class="full-header">
+      <div class="full-icon">👑</div>
+      <div class="full-name">ACTIVE SHOP</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+      <div class="full-num">18 <span>pedidos</span></div>
+      <div style="text-align:right"><div class="full-val-num lucro">R$ 210</div><div class="full-val-label">Lucro</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GRADUAÇÃO -->
+<div class="section-title" style="display:flex;align-items:center;gap:6px;">Graduação dos Pedidos <span style="opacity:0.3">ⓘ</span></div>
+<div class="grad-grid">
+  <div class="grad-card red">
+    <div class="grad-emoji">📉</div>
+    <div class="grad-label">Prejuízo</div>
+    <div class="grad-num">42</div>
+    <div class="grad-range">&lt; 0%</div>
+  </div>
+  <div class="grad-card orange">
+    <div class="grad-emoji">⚠️</div>
+    <div class="grad-label">Atenção</div>
+    <div class="grad-num">11</div>
+    <div class="grad-range">0% a 10%</div>
+  </div>
+  <div class="grad-card yellow">
+    <div class="grad-emoji">😐</div>
+    <div class="grad-label">Aceitável</div>
+    <div class="grad-num">17</div>
+    <div class="grad-range">10% a 20%</div>
+  </div>
+  <div class="grad-card green grad-wide">
+    <div class="grad-emoji">📈</div>
+    <div class="grad-label">Saudável</div>
+    <div class="grad-num">71</div>
+    <div class="grad-range">&gt; 20%</div>
+  </div>
+  <div class="grad-card purple grad-wide">
+    <div class="grad-emoji">🛒</div>
+    <div class="grad-label">Carrinhos</div>
+    <div class="grad-num">3</div>
+    <div class="grad-range">+1 item</div>
+  </div>
+</div>
+
+</body>
+</html>
