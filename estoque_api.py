@@ -151,29 +151,30 @@ def busca_estoque():
                     p["vendas_30d"] = map_vendas_30[p["cod_interno"]]
                     p["vendas_7d"] = map_vendas_7[p["cod_interno"]]
 
-        # --- BUSCA FOTOS MELHORES (ECOM, FULL, ATON) SE NECESSÁRIO ---
-        # Prioridade igual ao pedidos: 1) ML_SKU_FULL, 2) MATERIAIS_IMAGENS, 3) ECOM_SKU
+        # --- BUSCA FOTOS MELHORES NO SUPABASE (Múltiplas Origens) ---
+        # Como as views ML_SKU_FULL/ECOM_SKU são lentas, buscamos as fotos já consolidadas no Supabase (igual à aba Pedidos)
+        map_fotos_supabase = {}
         if cods_internos:
-            cursor.execute(f"""
-                SELECT SKU, URL FROM ML_SKU_FULL 
-                WHERE SKU IN ({placeholders_int})
-            """, cods_internos)
-            map_fotos_full = {}
-            for row in cursor.fetchall():
-                if row.URL and len(row.URL) > 10:
-                    map_fotos_full[row.SKU.strip()] = row.URL.strip()
-
-            cursor.execute(f"""
-                SELECT SKU, FOTOPATH FROM ECOM_SKU 
-                WHERE SKU IN ({placeholders_int})
-            """, cods_internos)
-            map_fotos_ecom = {}
-            for row in cursor.fetchall():
-                if row.FOTOPATH and len(row.FOTOPATH) > 10:
-                    map_fotos_ecom[row.SKU.strip()] = row.FOTOPATH.strip()
-        else:
-            map_fotos_full = {}
-            map_fotos_ecom = {}
+            try:
+                import requests
+                SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://izvddltdhxmfgxlimefl.supabase.co")
+                SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6dmRkbHRkaHhtZmd4bGltZWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzQ0NTgsImV4cCI6MjA4ODgxMDQ1OH0.uo45flx-W8n2CXbd8evdJODFDPIo1J5hbBeIIihmGK8")
+                if SUPABASE_KEY:
+                    # Traz as fotos dos pedidos mais recentes para esses SKUs
+                    skus_join = ",".join(cods_internos)
+                    res = requests.get(
+                        f"{SUPABASE_URL}/rest/v1/dashboard_pedidos?cod_interno=in.({skus_join})&select=cod_interno,url_imagem&limit=200",
+                        headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+                        timeout=3
+                    )
+                    if res.status_code == 200:
+                        for item_data in res.json():
+                            ci = item_data.get("cod_interno", "").strip()
+                            ui = item_data.get("url_imagem", "").strip()
+                            if ci and ui and ui != 'None' and len(ui) > 10:
+                                map_fotos_supabase[ci] = ui
+            except Exception as e:
+                print("Erro Supabase Imagens:", e)
 
         cursor.execute(f"""
             SELECT CODID, URL FROM MATERIAIS_IMAGENS 
@@ -189,12 +190,10 @@ def busca_estoque():
             codid = p["codid"]
             
             melhor_foto = None
-            if cod_int in map_fotos_full:
-                melhor_foto = map_fotos_full[cod_int]
+            if cod_int in map_fotos_supabase:
+                melhor_foto = map_fotos_supabase[cod_int]
             elif codid in map_fotos_aton:
                 melhor_foto = map_fotos_aton[codid]
-            elif cod_int in map_fotos_ecom:
-                melhor_foto = map_fotos_ecom[cod_int]
                 
             if melhor_foto:
                 # Corrigir URLs do Mercado Livre que vem como http://
