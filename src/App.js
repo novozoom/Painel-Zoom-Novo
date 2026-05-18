@@ -48,6 +48,7 @@ function Resultados() {
     const [estoqueResultados, setEstoqueResultados] = useState([]);
     const [isEstoqueLoading, setIsEstoqueLoading] = useState(false);
     const [estoqueMsg, setEstoqueMsg] = useState('');
+    const [expandedCard, setExpandedCard] = useState(null);
     
     useEffect(() => {
         localStorage.setItem('cfg_imposto', imposto);
@@ -1532,53 +1533,99 @@ function Resultados() {
                                     // Calcula total em estoque (soma de todos os armazéns)
                                     const totalQtd = item.estoques.reduce((acc, e) => acc + e.quantidade, 0);
                                     
+                                    // Cálculos de Status
+                                    let statusInativo = false;
+                                    let diasSemVender = 0;
+                                    if (item.ultima_venda && item.ultima_venda.includes('/')) {
+                                        const [dia, mes, ano] = item.ultima_venda.split('/');
+                                        const dataUltimaVenda = new Date(`${ano}-${mes}-${dia}`);
+                                        const dias = Math.floor((new Date() - dataUltimaVenda) / (1000 * 60 * 60 * 24));
+                                        diasSemVender = dias;
+                                        if (dias > 30) statusInativo = true;
+                                    } else if (!item.ultima_venda) {
+                                        statusInativo = true; // Nunca vendido ou mt antigo
+                                        diasSemVender = 999;
+                                    }
+                                    
+                                    const isOpen = expandedCard === index;
+                                    
                                     return (
-                                        <article className="product-row" key={index} style={{borderLeft: '4px solid var(--cyan)'}}>
-                                            <div className="product-photo">
-                                                {item.foto_url && item.foto_url.trim() !== 'None' ? (
-                                                    <img src={item.foto_url.startsWith('http') ? item.foto_url : 'https://' + item.foto_url} alt="" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="30">📦</text></svg>'; }} style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
-                                                ) : <span style={{fontSize:'30px'}}>📦</span>}
+                                        <article className={`product-card ${statusInativo ? 'inactive' : ''} ${isOpen ? 'open' : ''}`} key={index}>
+                                            <div className="card-header" onClick={() => setExpandedCard(isOpen ? null : index)}>
+                                                <div className="product-photo" style={{width: '76px', height: '76px', minWidth: '76px'}}>
+                                                    {item.foto_url && item.foto_url.trim() !== 'None' ? (
+                                                        <img src={item.foto_url.startsWith('http') ? item.foto_url : 'https://' + item.foto_url} alt="" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="30">📦</text></svg>'; }} style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                    ) : <span style={{fontSize:'30px'}}>📦</span>}
+                                                </div>
+                                                <div className="card-info" style={{width: '100%'}}>
+                                                    <h3 style={{margin:0, fontSize:'14px', lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{item.descricao}</h3>
+                                                    <div className="tags" style={{marginTop: '6px', marginBottom: '8px', display:'flex', gap:'6px', flexWrap:'wrap'}}>
+                                                        <span style={{background:'rgba(255,255,255,0.1)', color:'white', fontSize:'10px', fontWeight:600, padding:'3px 8px', borderRadius:'6px'}}>SKU: {item.cod_interno || 'N/A'}</span>
+                                                        <span style={{background:'rgba(6,182,212,0.15)', color:'var(--cyan)', fontSize:'10px', fontWeight:600, padding:'3px 8px', borderRadius:'6px'}}>{item.grupo} / {item.subgrupo}</span>
+                                                    </div>
+                                                    
+                                                    {/* Estoques Miniatura */}
+                                                    <div style={{display:'flex', gap:'6px', flexWrap:'wrap', marginTop:'4px'}}>
+                                                        {item.estoques.length === 0 ? (
+                                                            <span style={{fontSize:'11px', padding:'4px 8px', borderRadius:'6px', background:'rgba(255,0,0,0.1)', color:'var(--red)', fontWeight:700}}>Sem estoque</span>
+                                                        ) : (
+                                                            item.estoques.map((est, i) => (
+                                                                <span key={i} style={{
+                                                                    fontSize:'11px', padding:'4px 8px', borderRadius:'6px', 
+                                                                    background: est.armazem.toUpperCase().includes('FULL') ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', 
+                                                                    color: est.armazem.toUpperCase().includes('FULL') ? 'var(--green)' : 'white',
+                                                                    fontWeight: '700'
+                                                                }}>
+                                                                    {est.armazem.toUpperCase().includes('FULL') ? '⚡ ' : '📦 '}
+                                                                    {est.armazem}: {est.quantidade}
+                                                                </span>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="expand-icon">{isOpen ? '▲' : '▼'}</div>
                                             </div>
-                                            <div className="product-info" style={{width: '100%'}}>
-                                                <h3>{item.descricao}</h3>
-                                                <div className="tags" style={{marginTop: '6px', marginBottom: '8px'}}>
-                                                    <span className="tag origin">{item.fornecedor}</span>
-                                                    {item.cod_interno && <span className="tag pid">SKU: {item.cod_interno}</span>}
-                                                    {item.cod_barras && <span className="tag" style={{background: 'rgba(255,255,255,0.05)', color: 'var(--soft)'}}>EAN: {item.cod_barras}</span>}
-                                                </div>
-                                                <div style={{fontSize: '11px', color: 'var(--soft)', marginBottom: '8px'}}>
-                                                    Grupo/Subgrupo: <span style={{color: 'white'}}>{item.grupo} / {item.subgrupo}</span>
-                                                </div>
-                                                
-                                                {/* Estoques */}
-                                                <div style={{display:'flex', gap:'6px', flexWrap:'wrap', marginBottom:'8px'}}>
-                                                    {item.estoques.length === 0 ? (
-                                                        <span style={{fontSize:'11px', padding:'3px 8px', borderRadius:'6px', background:'rgba(255,0,0,0.1)', color:'var(--red)'}}>Sem estoque</span>
-                                                    ) : (
-                                                        item.estoques.map((est, i) => (
-                                                            <span key={i} style={{
-                                                                fontSize:'11px', padding:'3px 8px', borderRadius:'6px', 
-                                                                background: est.armazem.toUpperCase().includes('FULL') ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.08)', 
-                                                                color: est.armazem.toUpperCase().includes('FULL') ? '#22c55e' : 'white',
-                                                                fontWeight: '600'
-                                                            }}>
-                                                                {est.armazem.toUpperCase().includes('FULL') ? '⚡ ' : '📦 '}
-                                                                {est.armazem}: {est.quantidade}
+                                            
+                                            <div className={`card-details ${isOpen ? 'open' : ''}`}>
+                                                <div className="details-content">
+                                                    
+                                                    <div className="metric-grid">
+                                                        <div className="metric-box">
+                                                            <span className="metric-label">Giro (30 Dias)</span>
+                                                            <div className="metric-value">{item.vendas_30d} <span style={{fontSize:'12px', color:'var(--text)', fontWeight:500}}>peças</span></div>
+                                                            <span className="metric-sub" style={{color: item.lucro_total_30d > 0 ? 'var(--green)' : 'var(--soft)'}}>
+                                                                {item.lucro_total_30d > 0 ? `+ R$ ${item.lucro_total_30d.toFixed(2)} lucro` : 'Sem lucro'}
                                                             </span>
-                                                        ))
-                                                    )}
-                                                </div>
-                                                
-                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)'}}>
-                                                    <div>
-                                                        <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Giro (30d) / (7d)</p>
-                                                        <b style={{color: item.vendas_30d > 0 ? 'var(--cyan)' : 'var(--soft)', fontSize: '14px'}}>{item.vendas_30d} unid.</b>
-                                                        <span style={{fontSize: '12px', color: 'var(--soft)', marginLeft: '4px'}}>| {item.vendas_7d} unid.</span>
+                                                        </div>
+                                                        <div className="metric-box">
+                                                            <span className="metric-label">Giro (7 Dias)</span>
+                                                            <div className="metric-value">{item.vendas_7d} <span style={{fontSize:'12px', color:'var(--text)', fontWeight:500}}>peças</span></div>
+                                                            <span className="metric-sub" style={{color: item.lucro_total_7d > 0 ? 'var(--green)' : 'var(--soft)'}}>
+                                                                {item.lucro_total_7d > 0 ? `+ R$ ${item.lucro_total_7d.toFixed(2)} lucro` : 'Sem lucro'}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div style={{textAlign: 'right'}}>
-                                                        <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Custo Ref.</p>
-                                                        <b style={{color: 'var(--orange)', fontSize: '14px'}}>R$ {item.custo.toFixed(2)}</b>
+
+                                                    <div className="profit-row">
+                                                        <div>
+                                                            <div style={{fontSize: '11px', color: 'var(--soft)', marginBottom: '2px'}}>Lucro Médio (Unidade)</div>
+                                                            <div style={{fontSize: '16px', fontWeight: 800, color: 'var(--cyan)'}}>R$ {item.lucro_medio ? item.lucro_medio.toFixed(2) : '0.00'}</div>
+                                                        </div>
+                                                        <div style={{textAlign: 'right'}}>
+                                                            <div style={{fontSize: '11px', color: 'var(--soft)', marginBottom: '2px'}}>Custo Ref.</div>
+                                                            <div style={{fontSize: '14px', fontWeight: 700, color: 'var(--orange)'}}>R$ {item.custo.toFixed(2)}</div>
+                                                        </div>
                                                     </div>
+
+                                                    <div className="status-row">
+                                                        <div style={{color: 'var(--soft)'}}>Última Venda: <b>{item.ultima_venda ? (diasSemVender === 0 ? 'Hoje' : (diasSemVender === 1 ? 'Ontem' : `${item.ultima_venda} (há ${diasSemVender}d)`)) : 'Sem Registro'}</b></div>
+                                                        {statusInativo ? (
+                                                            <div className="status-badge status-inactive">Estoque Parado ⚠️</div>
+                                                        ) : (
+                                                            <div className="status-badge status-active">Item Quente 🔥</div>
+                                                        )}
+                                                    </div>
+
                                                 </div>
                                             </div>
                                         </article>

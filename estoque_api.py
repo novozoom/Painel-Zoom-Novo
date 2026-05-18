@@ -87,7 +87,11 @@ def busca_estoque():
                 "foto_url": foto_url,
                 "estoques": [],
                 "vendas_7d": 0,
-                "vendas_30d": 0
+                "vendas_30d": 0,
+                "lucro_total_30d": 0,
+                "lucro_total_7d": 0,
+                "lucro_medio": 0,
+                "ultima_venda": None
             })
 
         if not produtos:
@@ -151,30 +155,62 @@ def busca_estoque():
                     p["vendas_30d"] = map_vendas_30[p["cod_interno"]]
                     p["vendas_7d"] = map_vendas_7[p["cod_interno"]]
 
-        # --- BUSCA FOTOS MELHORES NO SUPABASE (Múltiplas Origens) ---
-        # Como as views ML_SKU_FULL/ECOM_SKU são lentas, buscamos as fotos já consolidadas no Supabase (igual à aba Pedidos)
+        # --- BUSCA DADOS DE VENDAS (Qtd, Lucro, Última Venda) E FOTOS NO SUPABASE ---
+        # Usamos o Supabase para ter o lucro preciso e fotos, buscando histórico de até 90 dias
         map_fotos_supabase = {}
+        map_lucro_30 = {}
+        map_lucro_7 = {}
+        map_qtd_30_sup = {}
+        map_ultima_venda = {}
+
         if cods_internos:
             try:
                 import requests
+                from datetime import datetime, timedelta
+                
+                hoje = datetime.utcnow()
+                data_limite_90 = (hoje - timedelta(days=90)).strftime('%Y-%m-%d')
+                data_limite_30 = (hoje - timedelta(days=30)).strftime('%Y-%m-%d')
+                data_limite_7 = (hoje - timedelta(days=7)).strftime('%Y-%m-%d')
+
                 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://izvddltdhxmfgxlimefl.supabase.co")
                 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6dmRkbHRkaHhtZmd4bGltZWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzQ0NTgsImV4cCI6MjA4ODgxMDQ1OH0.uo45flx-W8n2CXbd8evdJODFDPIo1J5hbBeIIihmGK8")
                 if SUPABASE_KEY:
-                    # Traz as fotos dos pedidos mais recentes para esses SKUs
                     skus_join = ",".join(cods_internos)
                     res = requests.get(
-                        f"{SUPABASE_URL}/rest/v1/dashboard_pedidos?cod_interno=in.({skus_join})&select=cod_interno,url_imagem&limit=200",
+                        f"{SUPABASE_URL}/rest/v1/dashboard_pedidos?cod_interno=in.({skus_join})&data_venda=gte.{data_limite_90}&select=cod_interno,url_imagem,lucro,data_venda,quant_itens&limit=5000",
                         headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
-                        timeout=3
+                        timeout=5
                     )
                     if res.status_code == 200:
                         for item_data in res.json():
                             ci = item_data.get("cod_interno", "").strip()
+                            if not ci: continue
+                            
+                            # Foto
                             ui = item_data.get("url_imagem", "").strip()
-                            if ci and ui and ui != 'None' and len(ui) > 10:
+                            if ui and ui != 'None' and len(ui) > 10:
                                 map_fotos_supabase[ci] = ui
+                                
+                            # Métricas
+                            dv = item_data.get("data_venda")
+                            lucro = float(item_data.get("lucro", 0) or 0)
+                            qtd = int(item_data.get("quant_itens", 1) or 1)
+                            
+                            # Última Venda (Max)
+                            if dv:
+                                if ci not in map_ultima_venda or dv > map_ultima_venda[ci]:
+                                    map_ultima_venda[ci] = dv
+                                    
+                                # Acumulado 30D e 7D
+                                if dv >= data_limite_30:
+                                    map_lucro_30[ci] = map_lucro_30.get(ci, 0) + lucro
+                                    map_qtd_30_sup[ci] = map_qtd_30_sup.get(ci, 0) + qtd
+                                if dv >= data_limite_7:
+                                    map_lucro_7[ci] = map_lucro_7.get(ci, 0) + lucro
+
             except Exception as e:
-                print("Erro Supabase Imagens:", e)
+                print("Erro Supabase:", e)
 
         cursor.execute(f"""
             SELECT CODID, URL FROM MATERIAIS_IMAGENS 
@@ -198,6 +234,26 @@ def busca_estoque():
             if melhor_foto:
                 # Corrigir URLs do Mercado Livre que vem como http://
                 p["foto_url"] = melhor_foto.replace("http://", "https://")
+                
+            # Atualizar Métricas Financeiras
+            if cod_int in map_ultima_venda:
+                # Converter de 2026-05-18 para DD/MM/AAAA
+                try:
+                    p["ultima_venda"] = f'{map_ultima_venda[cod_int][8:10]}/{map_ultima_venda[cod_int][5:7]}/{map_ultima_venda[cod_int][:4]}'
+                except:
+                    p["ultima_venda"] = map_ultima_venda[cod_int]
+            
+            p["lucro_total_30d"] = map_lucro_30.get(cod_int, 0)
+            p["lucro_total_7d"] = map_lucro_7.get(cod_int, 0)
+            
+            qtd_sup = map_qtd_30_sup.get(cod_int, 0)
+            if qtd_sup > 0:
+                p["lucro_medio"] = p["lucro_total_30d"] / qtd_sup
+            else:
+                p["lucro_medio"] = p["custo"] * 0.15 # Fallback estético de margem se não houver vendas
+                
+        # Ordenar os resultados para trazer os itens com maior giro 30d primeiro
+        produtos.sort(key=lambda x: x["vendas_30d"], reverse=True)
 
         return jsonify({"status": "success", "resultados": produtos})
         
