@@ -4,6 +4,9 @@ import axios from 'axios';
 import {CircularProgress} from "@mui/joy";
 import { format } from "date-fns";
 
+// URL da API backend (configurável por ambiente para multi-tenant)
+const API_URL = process.env.REACT_APP_API_URL || 'https://painel-zoom-novo.onrender.com';
+
 const getMarginColor = (margin) => {
     if (!isFinite(margin)) return '#8b8e96';
     if (margin < 0) return 'var(--red)';
@@ -134,7 +137,7 @@ function Resultados() {
     useEffect(() => {
         const buscarDadosOntem = async () => {
             try {
-                const respostaDados = await axios.get('https://painel-zoom-novo.onrender.com/api/faturamento_ontem');
+                const respostaDados = await axios.get(`${API_URL}/api/faturamento_ontem`);
                 const pedidosUnicos = new Set();
                 let somaTotal = 0;
                 respostaDados.data.forEach(item => {
@@ -232,7 +235,7 @@ function Resultados() {
             }
 
             // 2) FETCH SEM ESPERAR SYNC - busca dados existentes primeiro
-            const url = `https://painel-zoom-novo.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
+            const url = `${API_URL}/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
             const respostaDados = await axios.get(url, { timeout: 15000 });
             const resultado = processarDadosBrutos(respostaDados.data);
 
@@ -247,7 +250,7 @@ function Resultados() {
             } catch(e) { /* localStorage cheio */ }
 
             // 3) SYNC EM BACKGROUND - dispara e esquece (não refaz fetch)
-            axios.post(`https://painel-zoom-novo.onrender.com/api/sync`, {
+            axios.post(`${API_URL}/api/sync`, {
                 data_inicio: dataInicioStr, data_fim: dataFimStr
             }).catch(e => console.log('Sync background:', e.message));
 
@@ -259,7 +262,7 @@ function Resultados() {
 
     // Keep-alive: pinga o backend a cada 4 min para evitar cold start do Render
     useEffect(() => {
-        const ping = () => axios.get('https://painel-zoom-novo.onrender.com/', { timeout: 5000 }).catch(() => {});
+        const ping = () => axios.get(`${API_URL}/`, { timeout: 5000 }).catch(() => {});
         ping();
         const keepAlive = setInterval(ping, 4 * 60 * 1000);
         return () => clearInterval(keepAlive);

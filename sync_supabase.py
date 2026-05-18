@@ -3,17 +3,23 @@ from supabase import create_client, Client
 import pyodbc
 import datetime
 
-# Configurações Supabase
+# Configurações Supabase (variável de ambiente ou fallback)
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://izvddltdhxmfgxlimefl.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6dmRkbHRkaHhtZmd4bGltZWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzQ0NTgsImV4cCI6MjA4ODgxMDQ1OH0.uo45flx-W8n2CXbd8evdJODFDPIo1J5hbBeIIihmGK8")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Configurações do ERP (variável de ambiente ou fallback)
+DB_SERVER = os.environ.get("DB_SERVER", "200.187.69.101")
+DB_NAME = os.environ.get("DB_NAME", "AmbarZoomBrinquedos")
+DB_USER = os.environ.get("DB_USER", "zoombrinquedos")
+DB_PASS = os.environ.get("DB_PASS", "zoombrinquedos@2024")
+
 def sincronizar_pedidos(data_inicio, data_fim):
-    conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};'
-                          'SERVER=200.187.69.101;'
-                          'DATABASE=AmbarZoomBrinquedos;'
-                          'UID=zoombrinquedos;'
-                          'PWD=zoombrinquedos@2024;'
+    conn = pyodbc.connect(f'DRIVER={{ODBC Driver 17 for SQL Server}};'
+                          f'SERVER={DB_SERVER};'
+                          f'DATABASE={DB_NAME};'
+                          f'UID={DB_USER};'
+                          f'PWD={DB_PASS};'
                           'TrustServerCertificate=yes;'
                           'TIMEOUT=60')
     cursor = conn.cursor()
