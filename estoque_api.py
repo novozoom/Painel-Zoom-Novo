@@ -37,17 +37,22 @@ def busca_estoque():
         cursor.execute("""
             SELECT TOP 50
                 M.CODID, M.COD_INTERNO, M.COD_BARRAS, M.DESCRICAO, 
-                M.VLR_CUSTO, M.FOTOPATH, F.FABRICANTE_DESCR
+                M.VLR_CUSTO, M.FOTOPATH, F.FABRICANTE_DESCR,
+                G.DESCRICAO AS NOME_GRUPO, SG.DESCRICAO AS NOME_SUBGRUPO
             FROM MATERIAIS M
             LEFT JOIN FABRICANTE_MATERIAIS F ON M.FABRICANTE = F.COD_FABRICANTE
+            LEFT JOIN GRUPO G ON M.GRUPO = G.CODIGO
+            LEFT JOIN SUB_GRUPO SG ON M.SUBGRUPO = SG.CODIGO_SUBGRUPO
             WHERE (M.INATIVO = 'N' OR M.INATIVO IS NULL)
               AND (
                 M.COD_BARRAS LIKE ? 
                 OR M.COD_INTERNO LIKE ?
                 OR M.DESCRICAO LIKE ?
                 OR F.FABRICANTE_DESCR LIKE ?
+                OR G.DESCRICAO LIKE ?
+                OR SG.DESCRICAO LIKE ?
               )
-        """, (termo_sql, termo_sql, termo_sql, termo_sql))
+        """, (termo_sql, termo_sql, termo_sql, termo_sql, termo_sql, termo_sql))
         
         produtos = []
         rows = cursor.fetchall()
@@ -57,14 +62,16 @@ def busca_estoque():
             cod_barras = row.COD_BARRAS.strip() if row.COD_BARRAS else ""
             descricao = row.DESCRICAO.strip() if row.DESCRICAO else "Sem Descrição"
             custo = float(row.VLR_CUSTO) if row.VLR_CUSTO else 0.0
-            fornecedor = row.FABRICANTE_DESCR.strip() if row.FABRICANTE_DESCR else "MARCA NÃO DEFINIDA"
+            fornecedor = row.FABRICANTE_DESCR.strip() if row.FABRICANTE_DESCR else "N/A"
+            grupo = row.NOME_GRUPO.strip() if row.NOME_GRUPO else "N/A"
+            subgrupo = row.NOME_SUBGRUPO.strip() if row.NOME_SUBGRUPO else "N/A"
             
             # Foto: se tiver FOTOPATH, tenta formar a url local, caso não seja link já
             foto_url = None
             if row.FOTOPATH:
                 fp = row.FOTOPATH.strip()
                 if fp.startswith("http"):
-                    foto_url = fp
+                    foto_url = fp.replace("http://", "https://")
                 else:
                     foto_url = "https://ambarxcloud.com.br/zoombrinquedos/" + fp
 
@@ -75,8 +82,11 @@ def busca_estoque():
                 "descricao": descricao,
                 "custo": custo,
                 "fornecedor": fornecedor,
+                "grupo": grupo,
+                "subgrupo": subgrupo,
                 "foto_url": foto_url,
                 "estoques": [],
+                "vendas_7d": 0,
                 "vendas_30d": 0
             })
 
@@ -114,11 +124,13 @@ def busca_estoque():
                 if p["codid"] in map_estoque:
                     p["estoques"] = sorted(map_estoque[p["codid"]], key=lambda x: x["quantidade"], reverse=True)
 
-        # --- BUSCA VENDAS 30 DIAS ---
+        # --- BUSCA VENDAS 30 DIAS e 7 DIAS ---
         if cods_internos:
             placeholders_int = ",".join("?" * len(cods_internos))
             cursor.execute(f"""
-                SELECT PI.COD_INTERNO, SUM(PI.QUANT) AS VENDAS
+                SELECT PI.COD_INTERNO, 
+                       SUM(CASE WHEN PM.DATA >= GETDATE() - 30 THEN PI.QUANT ELSE 0 END) AS VENDAS_30D,
+                       SUM(CASE WHEN PM.DATA >= GETDATE() - 7 THEN PI.QUANT ELSE 0 END) AS VENDAS_7D
                 FROM PEDIDO_MATERIAIS_ITENS_CLIENTE PI
                 JOIN PEDIDO_MATERIAIS_CLIENTE PM ON PM.PEDIDO = PI.PEDIDO
                 WHERE PI.COD_INTERNO IN ({placeholders_int}) 
@@ -127,29 +139,66 @@ def busca_estoque():
                 GROUP BY PI.COD_INTERNO
             """, cods_internos)
             
-            map_vendas = {}
+            map_vendas_30 = {}
+            map_vendas_7 = {}
             for v_row in cursor.fetchall():
                 cod_int = v_row.COD_INTERNO.strip()
-                qtd = int(float(v_row.VENDAS))
-                map_vendas[cod_int] = qtd
+                map_vendas_30[cod_int] = int(float(v_row.VENDAS_30D)) if v_row.VENDAS_30D else 0
+                map_vendas_7[cod_int] = int(float(v_row.VENDAS_7D)) if v_row.VENDAS_7D else 0
                 
             for p in produtos:
-                if p["cod_interno"] in map_vendas:
-                    p["vendas_30d"] = map_vendas[p["cod_interno"]]
+                if p["cod_interno"] in map_vendas_30:
+                    p["vendas_30d"] = map_vendas_30[p["cod_interno"]]
+                    p["vendas_7d"] = map_vendas_7[p["cod_interno"]]
 
-        # --- BUSCA FOTOS MELHORES (ECOM) SE NECESSÁRIO ---
-        # Muitos itens no ERP usam a tabela MATERIAIS_IMAGENS do ecom
+        # --- BUSCA FOTOS MELHORES (ECOM, FULL, ATON) SE NECESSÁRIO ---
+        # Prioridade igual ao pedidos: 1) ML_SKU_FULL, 2) MATERIAIS_IMAGENS, 3) ECOM_SKU
+        if cods_internos:
+            cursor.execute(f"""
+                SELECT SKU, URL FROM ML_SKU_FULL 
+                WHERE SKU IN ({placeholders_int})
+            """, cods_internos)
+            map_fotos_full = {}
+            for row in cursor.fetchall():
+                if row.URL and len(row.URL) > 10:
+                    map_fotos_full[row.SKU.strip()] = row.URL.strip()
+
+            cursor.execute(f"""
+                SELECT SKU, FOTOPATH FROM ECOM_SKU 
+                WHERE SKU IN ({placeholders_int})
+            """, cods_internos)
+            map_fotos_ecom = {}
+            for row in cursor.fetchall():
+                if row.FOTOPATH and len(row.FOTOPATH) > 10:
+                    map_fotos_ecom[row.SKU.strip()] = row.FOTOPATH.strip()
+        else:
+            map_fotos_full = {}
+            map_fotos_ecom = {}
+
         cursor.execute(f"""
             SELECT CODID, URL FROM MATERIAIS_IMAGENS 
             WHERE CODID IN ({placeholders}) AND IMG_IDX = 0
         """, codids)
-        map_fotos = {}
+        map_fotos_aton = {}
         for f_row in cursor.fetchall():
-            map_fotos[f_row.CODID] = f_row.URL
+            if f_row.URL and len(f_row.URL) > 10:
+                map_fotos_aton[f_row.CODID] = f_row.URL.strip()
             
         for p in produtos:
-            if p["codid"] in map_fotos and map_fotos[p["codid"]] and len(map_fotos[p["codid"]]) > 10:
-                p["foto_url"] = map_fotos[p["codid"]]
+            cod_int = p["cod_interno"]
+            codid = p["codid"]
+            
+            melhor_foto = None
+            if cod_int in map_fotos_full:
+                melhor_foto = map_fotos_full[cod_int]
+            elif codid in map_fotos_aton:
+                melhor_foto = map_fotos_aton[codid]
+            elif cod_int in map_fotos_ecom:
+                melhor_foto = map_fotos_ecom[cod_int]
+                
+            if melhor_foto:
+                # Corrigir URLs do Mercado Livre que vem como http://
+                p["foto_url"] = melhor_foto.replace("http://", "https://")
 
         return jsonify({"status": "success", "resultados": produtos})
         

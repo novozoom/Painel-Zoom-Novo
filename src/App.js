@@ -1536,8 +1536,8 @@ function Resultados() {
                                         <article className="product-row" key={index} style={{borderLeft: '4px solid var(--cyan)'}}>
                                             <div className="product-photo">
                                                 {item.foto_url && item.foto_url.trim() !== 'None' ? (
-                                                    <img src={item.foto_url} alt="" loading="lazy" style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
-                                                ) : '📦'}
+                                                    <img src={item.foto_url.startsWith('http') ? item.foto_url : 'https://' + item.foto_url} alt="" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="30">📦</text></svg>'; }} style={{width:'100%', height:'100%', objectFit:'contain', borderRadius:'22px'}} />
+                                                ) : <span style={{fontSize:'30px'}}>📦</span>}
                                             </div>
                                             <div className="product-info" style={{width: '100%'}}>
                                                 <h3>{item.descricao}</h3>
@@ -1545,6 +1545,9 @@ function Resultados() {
                                                     <span className="tag origin">{item.fornecedor}</span>
                                                     {item.cod_interno && <span className="tag pid">SKU: {item.cod_interno}</span>}
                                                     {item.cod_barras && <span className="tag" style={{background: 'rgba(255,255,255,0.05)', color: 'var(--soft)'}}>EAN: {item.cod_barras}</span>}
+                                                </div>
+                                                <div style={{fontSize: '11px', color: 'var(--soft)', marginBottom: '8px'}}>
+                                                    Grupo/Subgrupo: <span style={{color: 'white'}}>{item.grupo} / {item.subgrupo}</span>
                                                 </div>
                                                 
                                                 {/* Estoques */}
@@ -1568,8 +1571,9 @@ function Resultados() {
                                                 
                                                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)'}}>
                                                     <div>
-                                                        <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Giro (30d)</p>
+                                                        <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Giro (30d) / (7d)</p>
                                                         <b style={{color: item.vendas_30d > 0 ? 'var(--cyan)' : 'var(--soft)', fontSize: '14px'}}>{item.vendas_30d} unid.</b>
+                                                        <span style={{fontSize: '12px', color: 'var(--soft)', marginLeft: '4px'}}>| {item.vendas_7d} unid.</span>
                                                     </div>
                                                     <div style={{textAlign: 'right'}}>
                                                         <p style={{fontSize: '11px', color: 'var(--soft)', margin:0}}>Custo Ref.</p>
