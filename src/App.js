@@ -125,10 +125,14 @@ function Resultados() {
         return margem * 100;
     }
 
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000'
+        : 'https://painel-zoom-novo.onrender.com';
+
     useEffect(() => {
         const buscarDadosOntem = async () => {
             try {
-                const respostaDados = await axios.get('https://painel-zoom-novo.onrender.com/api/faturamento_ontem');
+                const respostaDados = await axios.get(`${API_BASE_URL}/api/faturamento_ontem`);
                 const pedidosUnicos = new Set();
                 let somaTotal = 0;
                 respostaDados.data.forEach(item => {
@@ -187,13 +191,13 @@ function Resultados() {
             
             // Dispara o sync na nuvem silenciosamente
             try {
-                await axios.post(`https://painel-zoom-novo.onrender.com/api/sync`, {
+                await axios.post(`${API_BASE_URL}/api/sync`, {
                     data_inicio: dataInicioStr,
                     data_fim: dataFimStr
                 });
             } catch(e) { console.log('Erro no sync, buscando o que ja tem:', e); }
 
-            const url = `https://painel-zoom-novo.onrender.com/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
+            const url = `${API_BASE_URL}/api/resultados?data_inicio=${dataInicioStr}&data_fim=${dataFimStr}`;
             const respostaDados = await axios.get(url);
             const dadosFiltrados = respostaDados.data.filter(dado => dado.posicao.trim() !== "CANCELADO" && dado.posicao.trim() !== "CANCELADO        ");
 
@@ -211,7 +215,6 @@ function Resultados() {
                     const existente = dadosSemDuplicatas.find(item => item.sku === dado.sku && item.pedido_id === dado.pedido_id);
                     if (!existente) {
                         dadosSemDuplicatas.push(dado);
-                        somaValoresUnicos += dado.total_pedido;
                     }
                 }
             });
@@ -260,7 +263,7 @@ function Resultados() {
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
-            const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, item.quant_itens);
+            const frete = CalcularFrete(item.vlr_frete_real, item.vlr_frete_comprador, item.origem, item.itens || 1);
             
             const descImposto = valorDeVenda * (imposto / 100);
             const descOperacional = valorDeVenda * (custoOperacional / 100);
