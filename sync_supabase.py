@@ -139,7 +139,7 @@ ORDER BY
             "quant_itens": int(dicionario_resultado.get("QUANT_ITENS") or 1),
             "vlr_unit": float(dicionario_resultado.get("VLR_UNIT") or 0),
             "vlr_total": float(dicionario_resultado.get("VLR_TOTAL") or 0),
-            "sku": str(dicionario_resultado.get("SKU", "")),
+            "sku": f"{str(dicionario_resultado.get('SKU', ''))}_{str(dicionario_resultado.get('COD_INTERNO', '')).strip()}" if str(dicionario_resultado.get('COD_INTERNO', '')).strip() else str(dicionario_resultado.get('SKU', '')),
             "comissao_sku": float(dicionario_resultado.get("COMISSAO_SKU") or 0),
             "custo_adicional": float(dicionario_resultado.get("CUSTO_ADICIONAL") or 0),
             "custo_frete": float(dicionario_resultado.get("CUSTO_FRETE") or 0),

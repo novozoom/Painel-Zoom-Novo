@@ -107,7 +107,7 @@ def run_enrichment(data_inicio_date=None, data_fim_date=None):
         data_limite_fim = data_fim_date.strftime('%Y-%m-%d')
     
     try:
-        res = supabase.table("dashboard_pedidos").select("pedido_id, integracao, origem, vlr_total, vlr_custo, vlr_frete_comprador").ilike("vendedor", "%MERCADO LIVRE%").gte("data_venda", data_limite_inicio).lte("data_venda", data_limite_fim).execute()
+        res = supabase.table("dashboard_pedidos").select("pedido_id, integracao, origem, vlr_total, vlr_custo, vlr_frete_comprador, total_pedido").ilike("vendedor", "%MERCADO LIVRE%").gte("data_venda", data_limite_inicio).lte("data_venda", data_limite_fim).execute()
         pedidos = res.data
     except Exception as e:
         print("Erro ao buscar pedidos no Supabase:", e)
@@ -127,7 +127,7 @@ def run_enrichment(data_inicio_date=None, data_fim_date=None):
             
         ml_data = fetch_ml_api_data(ml_pedido_id, token)
         if ml_data:
-            valor_venda = float(p.get("vlr_total", 0))
+            valor_venda = float(p.get("total_pedido", 0))
             frete_comprador = float(p.get("vlr_frete_comprador", 0))
             
             shipping_cost = ml_data["frete"]
