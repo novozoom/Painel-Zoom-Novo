@@ -83,7 +83,11 @@ def run_enrichment(data_inicio_date=None, data_fim_date=None):
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     try:
-        conn = pyodbc.connect('DRIVER={ODBC Driver 18 for SQL Server};SERVER=200.187.69.101;DATABASE=AmbarZoomBrinquedos;UID=zoombrinquedos;PWD=zoombrinquedos@2024;Timeout=10;TrustServerCertificate=yes')
+        DB_SERVER = os.environ.get("DB_SERVER", "200.187.69.101")
+        DB_NAME = os.environ.get("DB_NAME", "AmbarZoomBrinquedos")
+        DB_USER = os.environ.get("DB_USER", "zoombrinquedos")
+        DB_PASS = os.environ.get("DB_PASS", "zoombrinquedos@2024")
+        conn = pyodbc.connect(f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={DB_SERVER};DATABASE={DB_NAME};UID={DB_USER};PWD={DB_PASS};Timeout=10;TrustServerCertificate=yes')
         tokens = get_ml_tokens(conn)
         conn.close()
     except Exception as e:
