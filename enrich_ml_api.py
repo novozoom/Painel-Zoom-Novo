@@ -134,7 +134,7 @@ def run_enrichment(data_inicio_date=None, data_fim_date=None):
             
         ml_data = fetch_ml_api_data(ml_pedido_id, token)
         if ml_data:
-            valor_venda = float(p.get("total_pedido", 0))
+            valor_venda = float(p.get("vlr_total") or p.get("total_pedido", 0))
             frete_comprador = float(p.get("vlr_frete_comprador", 0))
             
             shipping_cost = ml_data["frete"]
@@ -143,7 +143,7 @@ def run_enrichment(data_inicio_date=None, data_fim_date=None):
             # Engenharia Reversa para o App.js:
             # App.js: frete = (vlr_frete_real - vlr_frete_comprador) / quant
             # Queremos que (vlr_frete_real - vlr_frete_comprador) = shipping_cost
-            novo_frete_real = shipping_cost + frete_comprador
+            novo_frete_real = shipping_cost
             
             # App.js: tarifa = valorDeVenda * (comissao_sku / 100)
             # Queremos que valorDeVenda * (comissao_sku / 100) = sale_fee_total

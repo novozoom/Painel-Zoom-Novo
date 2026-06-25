@@ -331,10 +331,8 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
 
             const taxaFixa = calcularTaxaFixa(item.origem, item.custo_adicional, item.quant_itens, item.custo_frete);
             
-            // Valor de venda: total_pedido / quantidade de itens distintos no pedido.
-            // NOTA: vlr_unit do ERP é inconsistente (às vezes preço venda, às vezes custo unitário).
             const itensNoPedido = item.itens || 1;
-            const valorDeVenda = item.total_pedido / itensNoPedido; 
+            const valorDeVenda = item.vlr_total; 
             
             const tarifaDeVenda = CalcularTarifaDeVenda(item.origem, valorDeVenda, item.comissao_sku);
             const custoProduto = CalcularCustoProduto(item.quant_itens, item.vlr_custo);
