@@ -15,7 +15,18 @@ DB_USER = os.environ.get("DB_USER", "zoombrinquedos")
 DB_PASS = os.environ.get("DB_PASS", "zoombrinquedos@2024")
 
 def sincronizar_pedidos(data_inicio, data_fim):
-    conn = pyodbc.connect(f'DRIVER={{ODBC Driver 17 for SQL Server}};'
+    # Detecta o melhor driver SQL Server disponível
+    installed_drivers = pyodbc.drivers()
+    selected_driver = "ODBC Driver 18 for SQL Server"
+    if "ODBC Driver 18 for SQL Server" not in installed_drivers:
+        if "ODBC Driver 17 for SQL Server" in installed_drivers:
+            selected_driver = "ODBC Driver 17 for SQL Server"
+        else:
+            sql_drivers = [d for d in installed_drivers if "SQL Server" in d]
+            if sql_drivers:
+                selected_driver = sql_drivers[0]
+
+    conn = pyodbc.connect(f'DRIVER={{{selected_driver}}};'
                           f'SERVER={DB_SERVER};'
                           f'DATABASE={DB_NAME};'
                           f'UID={DB_USER};'
@@ -28,7 +39,7 @@ def sincronizar_pedidos(data_inicio, data_fim):
 WITH PedidoMaterialCount AS (
     SELECT 
         PI.[PEDIDO],
-        COUNT(DISTINCT PI.[COD_PEDIDO]) AS ITENS
+        COUNT(PI.[COD_INTERNO]) AS ITENS
     FROM 
         [AmbarZoomBrinquedos].[dbo].[PEDIDO_MATERIAIS_ITENS_CLIENTE] AS PI
     GROUP BY 
@@ -63,6 +74,7 @@ SELECT
     SKU.[CUSTO_FRETE],
     SKU.[TITULO],
     CASE 
+        WHEN COUNT(PI.[COD_INTERNO]) OVER(PARTITION BY PM.[PEDIDO], PI.[COD_PEDIDO]) > 1 THEN PI.[VLR_CUSTO]
         WHEN SKU.[VLR_CUSTO] = 0 THEN PI.[VLR_CUSTO] 
         ELSE SKU.[VLR_CUSTO] 
     END AS [VLR_CUSTO], 

@@ -83,11 +83,18 @@ def run_enrichment(data_inicio_date=None, data_fim_date=None):
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     try:
-        DB_SERVER = os.environ.get("DB_SERVER", "200.187.69.101")
-        DB_NAME = os.environ.get("DB_NAME", "AmbarZoomBrinquedos")
-        DB_USER = os.environ.get("DB_USER", "zoombrinquedos")
-        DB_PASS = os.environ.get("DB_PASS", "zoombrinquedos@2024")
-        conn = pyodbc.connect(f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={DB_SERVER};DATABASE={DB_NAME};UID={DB_USER};PWD={DB_PASS};Timeout=10;TrustServerCertificate=yes')
+        # Detecta o melhor driver SQL Server disponível
+        installed_drivers = pyodbc.drivers()
+        selected_driver = "ODBC Driver 18 for SQL Server"
+        if "ODBC Driver 18 for SQL Server" not in installed_drivers:
+            if "ODBC Driver 17 for SQL Server" in installed_drivers:
+                selected_driver = "ODBC Driver 17 for SQL Server"
+            else:
+                sql_drivers = [d for d in installed_drivers if "SQL Server" in d]
+                if sql_drivers:
+                    selected_driver = sql_drivers[0]
+
+        conn = pyodbc.connect(f'DRIVER={{{selected_driver}}};SERVER=200.187.69.101;DATABASE=AmbarZoomBrinquedos;UID=zoombrinquedos;PWD=zoombrinquedos@2024;Timeout=10;TrustServerCertificate=yes')
         tokens = get_ml_tokens(conn)
         conn.close()
     except Exception as e:
