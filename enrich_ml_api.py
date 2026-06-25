@@ -17,7 +17,7 @@ def fetch_ml_api_data(pedido_id, token):
     headers = {"Authorization": f"Bearer {token}"}
     
     # 1. Resolver o Order ID (se for pack, pegar o primeiro order_id)
-    pack_resp = requests.get(f"https://api.mercadolibre.com/packs/{pedido_id}", headers=headers)
+    pack_resp = requests.get(f"https://api.mercadolibre.com/packs/{pedido_id}", headers=headers, timeout=10)
     
     order_id = None
     shipment_id = None
@@ -30,7 +30,7 @@ def fetch_ml_api_data(pedido_id, token):
         shipment_id = p_data.get("shipment", {}).get("id")
     else:
         # Tenta como order direto
-        order_resp = requests.get(f"https://api.mercadolibre.com/orders/{pedido_id}", headers=headers)
+        order_resp = requests.get(f"https://api.mercadolibre.com/orders/{pedido_id}", headers=headers, timeout=10)
         if order_resp.status_code == 200:
             order_id = pedido_id
             o_data = order_resp.json()
@@ -38,10 +38,10 @@ def fetch_ml_api_data(pedido_id, token):
             
     if not order_id:
         return None  # Não encontrou na API
-
+ 
     # 2. Buscar Dados do Pedido (Taxas)
     sale_fee_total = 0.0
-    o_resp = requests.get(f"https://api.mercadolibre.com/orders/{order_id}", headers=headers)
+    o_resp = requests.get(f"https://api.mercadolibre.com/orders/{order_id}", headers=headers, timeout=10)
     if o_resp.status_code == 200:
         o_data = o_resp.json()
         for item in o_data.get("order_items", []):
@@ -54,7 +54,7 @@ def fetch_ml_api_data(pedido_id, token):
     logistic_type = "unknown"
     shipping_cost = 0.0
     if shipment_id:
-        s_resp = requests.get(f"https://api.mercadolibre.com/shipments/{shipment_id}", headers=headers)
+        s_resp = requests.get(f"https://api.mercadolibre.com/shipments/{shipment_id}", headers=headers, timeout=10)
         if s_resp.status_code == 200:
             s_data = s_resp.json()
             logistic_type = s_data.get("logistic_type", "")
